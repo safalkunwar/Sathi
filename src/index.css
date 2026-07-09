@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+html.theme-light {
+    filter: invert(1) hue-rotate(180deg);
+    background-color: #0F1113;
+}
+
+html.theme-light img,
+html.theme-light video {
+    filter: invert(1) hue-rotate(180deg);
+}

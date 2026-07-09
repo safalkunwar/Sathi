@@ -1,0 +1,529 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { StrictMode, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Navbar } from './components/Navbar';
+import { BookingModal } from './components/BookingModal';
+import { AuthModal } from './components/AuthModal';
+import { SafetyWidget } from './components/SafetyWidget';
+import { COMPANIONS, STORIES } from './data';
+import { Companion, ExperienceStory } from './types';
+import { MapPin, Star, ShieldCheck, Languages, Search, Play, Clock } from 'lucide-react';
+import * as motion from 'motion/react-client';
+
+export function ClientApp() {
+  const [activeTab, setActiveTab] = useState<'explore' | 'bookings' | 'messages' | 'about'>('explore');
+  const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewingStory, setViewingStory] = useState<ExperienceStory | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'guide' | null>(null);
+  const [isGuide, setIsGuide] = useState(false);
+  const [showGuideSetup, setShowGuideSetup] = useState(true);
+  
+  const filteredCompanions = COMPANIONS.filter(c => 
+    c.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.interests.some(i => i.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  return (
+    <div className="min-h-screen bg-[#0F1113] font-sans text-[#E0E0E0] pb-20">
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} onOpenAuth={setAuthMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 md:mt-8">
+        
+        {isGuide && showGuideSetup && (
+           <div className="mb-8 p-6 bg-[#1A1814] border border-[#C8A25E]/30 rounded-3xl relative overflow-hidden">
+              <button onClick={() => setShowGuideSetup(false)} className="absolute top-4 right-4 text-[#8E9299] hover:text-white">✕</button>
+              <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><Star className="w-5 h-5 text-[#C8A25E]" /> Complete Your Guide Profile</h2>
+              <p className="text-sm text-[#8E9299] mb-6">You've been authorized as a guide! Let's set up the information that travelers will see when they browse SATHI.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="col-span-1 flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#2A2D31] rounded-2xl bg-[#1E2124] hover:border-[#C8A25E] cursor-pointer text-[#8E9299] hover:text-[#C8A25E] transition-colors">
+                    <div className="w-20 h-20 bg-[#17191C] rounded-full mb-3 flex items-center justify-center">
+                       <span className="text-2xl font-light">+</span>
+                    </div>
+                    <span className="text-sm font-medium">Upload Profile Picture</span>
+                 </div>
+                 
+                 <div className="col-span-1 md:col-span-2 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                       <div>
+                         <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Display Name</label>
+                         <input type="text" className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm" placeholder="e.g. Pasang" />
+                       </div>
+                       <div>
+                         <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Age</label>
+                         <input type="number" className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm" placeholder="25" />
+                       </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Short Bio</label>
+                      <textarea rows={3} className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm resize-none" placeholder="Tell travelers about yourself and what you love about your city..."></textarea>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Languages Spoken</label>
+                      <input type="text" className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm" placeholder="English, Nepali, Newari..." />
+                    </div>
+                    <button className="px-6 py-2.5 bg-[#C8A25E] text-[#0F1113] font-bold uppercase tracking-wide text-xs rounded-xl hover:bg-[#B69150] transition-colors mt-2">Save Profile Data</button>
+                 </div>
+              </div>
+           </div>
+        )}
+
+        {activeTab === 'explore' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+            
+            {/* Visual Hero / Search block */}
+            <div className="relative rounded-3xl overflow-hidden h-[240px] md:h-[400px] mb-6 md:mb-12 border border-[#2A2D31] group">
+               <img src="https://images.unsplash.com/photo-1511216335778-7cb8f49fa7a3?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+               <div className="absolute inset-0 bg-gradient-to-t from-[#0F1113] via-[#0F1113]/40 to-transparent flex flex-col justify-end p-6 md:p-10">
+                  <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-[40px] md:text-5xl lg:text-6xl font-light text-white mb-2 md:mb-4 leading-tight drop-shadow-lg">Find a Local Friend <br className="hidden md:block" /><span className="italic font-serif text-[#C8A25E]">For Any Adventure</span></motion.h2>
+                  <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-white/80 text-sm md:text-lg max-w-xl drop-shadow-md hidden md:block">
+                    Meet amazing people, share experiences, and build genuine connections in a safe, welcoming community.
+                  </motion.p>
+               </div>
+            </div>
+
+            {/* Filters/Categories */}
+            <div className="mb-5 md:mb-10 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="flex gap-3 w-max">
+                {['Coffee Buddy', 'Travel Companion', 'Language Exchange', 'Food Explorer', 'Museum Guide', 'Hiking Partner', 'Shopping Buddy', 'Study Partner', 'Nightlife', 'Photography Walk'].map((cat, i) => (
+                   <motion.span whileTap={{ scale: 0.95 }} key={cat} className={`snap-start shrink-0 px-5 py-2.5 rounded-full text-[14px] font-medium tracking-wide cursor-pointer transition-colors border shadow-sm ${i === 0 ? 'bg-[#C8A25E] text-[#0F1113] border-[#C8A25E]' : 'bg-[#1E2124]/80 backdrop-blur-md text-[#8E9299] border-[#2A2D31] hover:border-[#C8A25E] hover:text-white'}`}>
+                     {cat}
+                   </motion.span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl md:text-2xl font-bold text-white">Featured Companions</h2>
+              <button className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">View All</button>
+            </div>
+            
+            {/* Companions Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+              {filteredCompanions.map((companion, idx) => (
+                <motion.div 
+                  key={companion.id} 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1, duration: 0.4 }}
+                  className="group bg-[#17191C] rounded-[20px] overflow-hidden shadow-lg shadow-black/20 hover:shadow-2xl hover:shadow-[#C8A25E]/5 transition-all flex flex-col border border-[#2A2D31]/50 relative"
+                >
+                  <div className="relative aspect-[4/4.5] md:aspect-[4/5] overflow-hidden">
+                    <img 
+                      src={companion.imageUrl} 
+                      alt={companion.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#17191C] via-[#17191C]/20 to-transparent opacity-80" />
+                    <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-white/10">
+                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-semibold text-white">{companion.rating}</span>
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-5 pt-2 flex-1 flex flex-col relative z-10 -mt-10">
+                    <div className="flex justify-between items-end mb-2">
+                      <div>
+                        <h3 className="font-bold text-[16px] md:text-lg text-white flex items-center gap-1.5 drop-shadow-md">
+                          {companion.name}, {companion.age}
+                          {companion.isVerified && (
+                            <ShieldCheck className="w-4 h-4 text-[#C8A25E]" title="KYC Verified" />
+                          )}
+                        </h3>
+                        <p className="text-[#8E9299] text-[13px] md:text-sm flex items-center gap-1 mt-0.5 drop-shadow-md">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {companion.location}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-[13px] md:text-sm text-[#8E9299] line-clamp-2 mt-2 mb-3 flex-1 font-light leading-relaxed">
+                      {companion.bio}
+                    </p>
+
+                    <div className="flex flex-col gap-2 mb-4">
+                      <div className="flex items-center gap-1.5 text-[12px] text-[#8E9299]">
+                        <Languages className="w-3.5 h-3.5" />
+                        <span className="truncate">{companion.languages.join(' • ')}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {companion.interests.slice(0, 3).map(interest => (
+                          <span key={interest} className="text-[11px] md:text-xs px-2.5 py-1 bg-[#1E2124]/80 backdrop-blur-sm border border-[#2A2D31] text-[#8E9299] rounded-lg">
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-[#2A2D31]/50">
+                      <div>
+                        <span className="font-semibold text-white text-[15px]">
+                          ${companion.hourlyRate} <span className="text-[12px] md:text-sm font-normal text-[#5A5E66]">/hr</span>
+                        </span>
+                        <div className="text-[12px] text-[#8E9299] mt-0.5 font-medium flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" /> {companion.rating} <span className="opacity-70">({companion.reviewsCount})</span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedCompanion(companion)}
+                        className="px-5 py-2.5 bg-[#C8A25E] text-[#0F1113] font-semibold text-sm rounded-[14px] hover:bg-[#B69150] transition-transform hover:scale-105 active:scale-95 shadow-sm"
+                      >
+                        Book
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Community Moments Feed */}
+            <div className="mt-16 md:mt-24">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl md:text-3xl font-bold text-white">Community Moments</h2>
+                <button className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">View Feed</button>
+              </div>
+              <div className="flex overflow-x-auto gap-6 hide-scrollbar snap-x snap-mandatory pb-4">
+                 {[
+                   { user: 'Sarah', companion: 'Emma', text: 'Sarah had a great coffee chat with Emma in Seattle.', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop', userAvatar: 'https://ui-avatars.com/api/?name=Sarah&background=random', compAvatar: 'https://ui-avatars.com/api/?name=Emma&background=random' },
+                   { user: 'Marcus', companion: 'David', text: 'Marcus and David exploring the hidden street art alleys.', image: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=800&auto=format&fit=crop', userAvatar: 'https://ui-avatars.com/api/?name=Marcus&background=random', compAvatar: 'https://ui-avatars.com/api/?name=David&background=random' },
+                   { user: 'Elena', companion: 'Sophie', text: 'Perfect afternoon language exchange with Sophie!', image: 'https://images.unsplash.com/photo-1529156069898-49953eb1b5ce?q=80&w=800&auto=format&fit=crop', userAvatar: 'https://ui-avatars.com/api/?name=Elena&background=random', compAvatar: 'https://ui-avatars.com/api/?name=Sophie&background=random' }
+                 ].map((moment, idx) => (
+                   <div key={idx} className="shrink-0 w-[300px] md:w-[380px] snap-center bg-[#17191C] rounded-[24px] overflow-hidden border border-[#2A2D31] group">
+                      <div className="h-64 relative overflow-hidden">
+                         <img src={moment.image} alt="Moment" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                         <div className="absolute inset-0 bg-gradient-to-t from-[#17191C] via-transparent to-transparent"></div>
+                      </div>
+                      <div className="p-5 relative z-10 -mt-10">
+                         <div className="flex items-center gap-2 mb-3">
+                            <img src={moment.userAvatar} alt={moment.user} className="w-10 h-10 rounded-full border-2 border-[#17191C]" />
+                            <img src={moment.compAvatar} alt={moment.companion} className="w-10 h-10 rounded-full border-2 border-[#17191C] -ml-4" />
+                         </div>
+                         <p className="text-white text-sm md:text-base font-light leading-relaxed">
+                            {moment.text}
+                         </p>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+
+            {/* Popular Activities */}
+            <div className="mt-16 md:mt-24">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl md:text-3xl font-bold text-white">Popular Activities</h2>
+                <button className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">Explore All</button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 {[
+                   { title: 'Local Coffee Chat', image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800&auto=format&fit=crop', duration: '1-2 hours', avgPrice: '$15/hr', count: '124 companions' },
+                   { title: 'Street Food Tour', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop', duration: '2-3 hours', avgPrice: '$20/hr', count: '85 companions' },
+                   { title: 'City Photography', image: 'https://images.unsplash.com/photo-1516862523118-a3724eb136d7?q=80&w=800&auto=format&fit=crop', duration: '2-4 hours', avgPrice: '$25/hr', count: '62 companions' }
+                 ].map((activity, idx) => (
+                   <div key={idx} className="group cursor-pointer rounded-[20px] overflow-hidden border border-[#2A2D31] bg-[#17191C] relative hover:border-[#C8A25E]/50 transition-colors">
+                      <div className="h-48 relative overflow-hidden">
+                         <img src={activity.image} alt={activity.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                         <div className="absolute inset-0 bg-gradient-to-t from-[#17191C] to-transparent"></div>
+                      </div>
+                      <div className="p-6 relative z-10 -mt-12">
+                         <h3 className="text-xl font-bold text-white mb-2 drop-shadow-md">{activity.title}</h3>
+                         <div className="flex flex-wrap items-center gap-4 text-sm text-[#8E9299]">
+                            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {activity.duration}</span>
+                            <span className="flex items-center gap-1.5"><span className="text-[#C8A25E]">Avg.</span> {activity.avgPrice}</span>
+                         </div>
+                         <div className="mt-4 pt-4 border-t border-[#2A2D31] flex items-center justify-between text-sm">
+                            <span className="text-[#8E9299]">{activity.count}</span>
+                            <span className="text-[#C8A25E] font-medium group-hover:translate-x-1 transition-transform inline-block">Explore →</span>
+                         </div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+
+            {/* Trust & Safety */}
+            <div className="mt-16 md:mt-24 mb-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-white">Trust & Safety First</h2>
+                <p className="text-[#8E9299] mt-2">Your safety and comfort are our top priorities.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-[#17191C] border border-[#2A2D31] p-6 rounded-[20px] flex flex-col items-center text-center">
+                   <div className="w-12 h-12 bg-[#C8A25E]/10 text-[#C8A25E] rounded-full flex items-center justify-center mb-4">
+                     <ShieldCheck className="w-6 h-6" />
+                   </div>
+                   <h3 className="text-lg font-bold text-white mb-2">Identity Verified</h3>
+                   <p className="text-sm text-[#8E9299]">Every companion goes through a strict identity and background check process.</p>
+                </div>
+                <div className="bg-[#17191C] border border-[#2A2D31] p-6 rounded-[20px] flex flex-col items-center text-center">
+                   <div className="w-12 h-12 bg-[#C8A25E]/10 text-[#C8A25E] rounded-full flex items-center justify-center mb-4">
+                     <Star className="w-6 h-6" />
+                   </div>
+                   <h3 className="text-lg font-bold text-white mb-2">Transparent Reviews</h3>
+                   <p className="text-sm text-[#8E9299]">Read genuine experiences from real users before booking your companion.</p>
+                </div>
+                <div className="bg-[#17191C] border border-[#2A2D31] p-6 rounded-[20px] flex flex-col items-center text-center">
+                   <div className="w-12 h-12 bg-[#C8A25E]/10 text-[#C8A25E] rounded-full flex items-center justify-center mb-4">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                   </div>
+                   <h3 className="text-lg font-bold text-white mb-2">Secure Payments</h3>
+                   <p className="text-sm text-[#8E9299]">Payments are held securely and only released after the experience.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Customer Testimonials */}
+            <div className="mt-16 md:mt-24 mb-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-white">Community Love</h2>
+                <p className="text-[#8E9299] mt-2">See what our community is saying about their experiences.</p>
+              </div>
+              <div className="flex overflow-x-auto gap-6 hide-scrollbar snap-x snap-mandatory pb-4">
+                 {[
+                   { name: 'Michael Chen', city: 'London', review: 'Aarav was an amazing guide! He showed me around all the best local coffee spots that I would have never found on my own. Highly recommended!', activity: 'Local Coffee Chat', avatar: 'https://ui-avatars.com/api/?name=Michael+C&background=random' },
+                   { name: 'Sarah Jenkins', city: 'New York', review: 'I had the best time exploring the street food scene. Very knowledgeable and friendly companion.', activity: 'Street Food Tour', avatar: 'https://ui-avatars.com/api/?name=Sarah+J&background=random' },
+                   { name: 'David Lee', city: 'Toronto', review: 'Great experience! We spent hours discussing photography and captured amazing shots of the city skyline.', activity: 'City Photography', avatar: 'https://ui-avatars.com/api/?name=David+L&background=random' }
+                 ].map((testimonial, idx) => (
+                   <div key={idx} className="shrink-0 w-80 md:w-[400px] snap-center bg-[#1E2124] border border-[#2A2D31] p-6 rounded-[20px] flex flex-col">
+                      <div className="flex items-center gap-1 mb-4 text-[#C8A25E]">
+                        <Star className="w-4 h-4 fill-current" /><Star className="w-4 h-4 fill-current" /><Star className="w-4 h-4 fill-current" /><Star className="w-4 h-4 fill-current" /><Star className="w-4 h-4 fill-current" />
+                      </div>
+                      <p className="text-white text-sm md:text-base leading-relaxed mb-6 flex-1">"{testimonial.review}"</p>
+                      <div className="flex items-center gap-4 mt-auto">
+                         <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full border-2 border-[#2A2D31]" />
+                         <div>
+                            <h4 className="font-bold text-white text-sm">{testimonial.name}</h4>
+                            <p className="text-xs text-[#8E9299]">{testimonial.city} • {testimonial.activity}</p>
+                         </div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+
+            {/* Upcoming Local Events */}
+            <div className="mt-16 md:mt-24 mb-12">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl md:text-3xl font-bold text-white">Upcoming Local Events</h2>
+                <button className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">View Calendar</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {[
+                   { date: 'Oct 24', time: '10:00 AM', title: 'Weekend Hiking Group', location: 'National Park Trailhead', spots: 3, participants: 8 },
+                   { date: 'Oct 25', time: '02:00 PM', title: 'Art Exhibition & Coffee', location: 'Downtown Gallery', spots: 2, participants: 5 },
+                   { date: 'Oct 26', time: '06:30 PM', title: 'Language Exchange Meetup', location: 'Central Cafe', spots: 5, participants: 15 },
+                   { date: 'Oct 28', time: '09:00 AM', title: 'Photography Walk', location: 'Historic District', spots: 1, participants: 6 }
+                 ].map((event, idx) => (
+                   <div key={idx} className="bg-[#17191C] border border-[#2A2D31] p-5 md:p-6 rounded-[20px] flex gap-4 hover:border-[#C8A25E]/50 transition-colors">
+                      <div className="shrink-0 w-16 h-16 rounded-2xl bg-[#1E2124] border border-[#2A2D31] flex flex-col items-center justify-center">
+                         <span className="text-[#C8A25E] text-xs font-bold uppercase">{event.date.split(' ')[0]}</span>
+                         <span className="text-white font-bold text-lg leading-none">{event.date.split(' ')[1]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                         <h3 className="font-bold text-white text-lg truncate">{event.title}</h3>
+                         <p className="text-sm text-[#8E9299] flex items-center gap-1.5 mt-1 truncate">
+                           <MapPin className="w-3.5 h-3.5" /> {event.location}
+                         </p>
+                         <p className="text-xs text-[#8E9299] flex items-center gap-1.5 mt-1 truncate">
+                           <Clock className="w-3.5 h-3.5" /> {event.time}
+                         </p>
+                         <div className="flex items-center justify-between mt-4">
+                            <span className="text-xs text-[#8E9299]">
+                              <span className="text-white font-medium">{event.participants}</span> going • <span className="text-[#C8A25E]">{event.spots} spots left</span>
+                            </span>
+                            <button className="px-4 py-1.5 bg-[#1E2124] text-white border border-[#2A2D31] text-xs font-medium rounded-lg hover:bg-[#C8A25E] hover:text-[#0F1113] hover:border-[#C8A25E] transition-colors">
+                               Join
+                            </button>
+                         </div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+
+          </motion.div>
+        )}
+
+        {activeTab === 'bookings' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+             <h2 className="text-2xl font-bold text-white mb-6 border-b border-[#2A2D31] pb-4">My Bookings</h2>
+             <div className="bg-[#17191C] border border-[#2A2D31] p-8 rounded-2xl flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-[#1E2124] border border-[#2A2D31] flex items-center justify-center">
+                   <Star className="w-8 h-8 text-[#8E9299]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">No active bookings</h3>
+                  <p className="text-[#8E9299] mt-2">You don't have any upcoming experiences scheduled.</p>
+                </div>
+                <button onClick={() => setActiveTab('explore')} className="mt-4 px-6 py-2 bg-[#C8A25E] text-[#0F1113] rounded-lg font-medium hover:bg-[#B69150] transition-colors">
+                  Explore Companions
+                </button>
+             </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'messages' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+             <h2 className="text-2xl font-bold text-white mb-6 border-b border-[#2A2D31] pb-4">Messages</h2>
+             <div className="bg-[#17191C] border border-[#2A2D31] rounded-2xl flex overflow-hidden min-h-[500px]">
+                <div className="w-1/3 border-r border-[#2A2D31] bg-[#0F1113]">
+                  <div className="p-4 border-b border-[#2A2D31]">
+                    <div className="bg-[#1E2124] border border-[#2A2D31] rounded-lg px-3 py-2 flex items-center gap-2">
+                       <Search className="w-4 h-4 text-[#8E9299]" />
+                       <input type="text" placeholder="Search chats..." className="bg-transparent border-none outline-none text-sm text-white w-full" />
+                    </div>
+                  </div>
+                  <div className="divide-y divide-[#2A2D31]">
+                     <div className="p-4 bg-[#1E2124] flex gap-3 cursor-pointer">
+                        <div className="relative">
+                           <img src={COMPANIONS[0].imageUrl} className="w-12 h-12 rounded-full object-cover" />
+                           <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-[#1E2124] absolute bottom-0 right-0"></div>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                           <div className="flex justify-between items-center mb-1">
+                              <span className="font-semibold text-white text-sm">{COMPANIONS[0].name}</span>
+                              <span className="text-[10px] text-[#C8A25E]">2m ago</span>
+                           </div>
+                           <p className="text-xs text-[#8E9299] truncate">Looking forward to our tour tomorrow!</p>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+                <div className="w-2/3 bg-[#17191C] flex flex-col">
+                   <div className="p-4 border-b border-[#2A2D31] flex items-center gap-3">
+                      <img src={COMPANIONS[0].imageUrl} className="w-10 h-10 rounded-full object-cover" />
+                      <div>
+                         <span className="font-semibold text-white block">{COMPANIONS[0].name}</span>
+                         <span className="text-xs text-green-500">Online</span>
+                      </div>
+                   </div>
+                   <div className="flex-1 p-4 flex flex-col justify-end space-y-4">
+                      
+                      <div className="flex gap-2 w-max max-w-[70%]">
+                        <img src={COMPANIONS[0].imageUrl} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                        <div className="bg-[#1E2124] border border-[#2A2D31] rounded-2xl rounded-tl-none p-3 text-sm text-white">
+                           Hi! Thanks for booking the History & Food tour. Are you okay meeting at the Patan Museum entrance?
+                        </div>
+                      </div>
+
+                   </div>
+                   <div className="p-4 border-t border-[#2A2D31]">
+                      <div className="flex items-center gap-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl p-2">
+                         <input type="text" placeholder="Type a message..." className="bg-transparent text-white outline-none flex-1 px-2 text-sm" />
+                         <button className="p-2 bg-[#C8A25E] text-[#0F1113] rounded-lg hover:bg-[#B69150] transition-colors font-medium text-xs uppercase tracking-wide">
+                            Send
+                         </button>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'about' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-3xl mx-auto">
+             <h2 className="text-3xl font-light text-white mb-6 border-b border-[#2A2D31] pb-4">About <span className="font-bold">SATHI<span className="text-[#C8A25E]">.</span></span></h2>
+             
+             <div className="bg-[#17191C] border border-[#2A2D31] p-8 rounded-3xl space-y-6 text-[#8E9299] leading-relaxed">
+                <p className="text-lg text-white">
+                   SATHI is your authentic companion platform in Nepal. We believe the best way to experience the Himalayas, heritage sites, and local culture is through the eyes of a local friend.
+                </p>
+                <p>
+                   Our platform connects travelers with KYC-verified, trusted, and knowledgeable locals for platonic cultural exchange, city tours, adventure guiding, and pure companionship.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                   <div className="p-5 bg-[#1E2124] border border-[#2A2D31] rounded-2xl">
+                      <ShieldCheck className="w-8 h-8 text-[#C8A25E] mb-3" />
+                      <h3 className="text-white font-semibold mb-2">Verified Safely</h3>
+                      <p className="text-sm">Every companion undergoes strict identity verification and background checks.</p>
+                   </div>
+                   <div className="p-5 bg-[#1E2124] border border-[#2A2D31] rounded-2xl">
+                      <Star className="w-8 h-8 text-[#C8A25E] mb-3" />
+                      <h3 className="text-white font-semibold mb-2">Authentic Experiences</h3>
+                      <p className="text-sm">From hidden street food to unspoken historical tales, discover the real Nepal.</p>
+                   </div>
+                </div>
+             </div>
+          </motion.div>
+        )}
+
+
+
+      </main>
+
+      {/* Booking Modal */}
+      {selectedCompanion && (
+        <BookingModal 
+          companion={selectedCompanion} 
+          onClose={() => setSelectedCompanion(null)} 
+          onMessage={() => {
+             setSelectedCompanion(null);
+             setActiveTab('messages');
+          }}
+        />
+      )}
+
+      {/* Story Modal */}
+      {viewingStory && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md" onClick={() => setViewingStory(null)}>
+            <div className="relative w-full max-w-sm aspect-[9/16] bg-[#17191C] rounded-3xl overflow-hidden border border-[#2A2D31]" onClick={e => e.stopPropagation()}>
+               <img src={viewingStory.imageUrl} className="w-full h-full object-cover" />
+               <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
+               
+               <div className="absolute top-0 inset-x-0 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                     <img src={viewingStory.userAvatar} className="w-10 h-10 rounded-full border-2 border-[#C8A25E]" />
+                     <div>
+                        <span className="text-white font-semibold text-sm block">{viewingStory.userName}</span>
+                        <span className="text-[#8E9299] text-xs">with {viewingStory.companionName} • {viewingStory.timeAgo}</span>
+                     </div>
+                  </div>
+                  <button onClick={() => setViewingStory(null)} className="text-white bg-black/40 rounded-full p-2 backdrop-blur-sm">✕</button>
+               </div>
+
+               {/* Left/Right Click Areas */}
+               <div className="absolute inset-y-20 left-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = STORIES.findIndex(s => s.id === viewingStory.id); if (idx > 0) setViewingStory(STORIES[idx - 1]); }}></div>
+               <div className="absolute inset-y-20 right-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = STORIES.findIndex(s => s.id === viewingStory.id); if (idx < STORIES.length - 1) setViewingStory(STORIES[idx + 1]); else setViewingStory(null); }}></div>
+
+               <div className="absolute bottom-10 inset-x-0 p-6 flex justify-between items-end gap-2 pointer-events-none">
+                  <p className="text-white text-lg font-medium shadow-sm">{viewingStory.caption}</p>
+                  
+                  <div className="flex gap-1 mb-1">
+                    {STORIES.map((s) => (
+                      <div key={s.id} className={`w-1.5 h-1.5 rounded-full ${s.id === viewingStory.id ? 'bg-white' : 'bg-white/30'}`} />
+                    ))}
+                  </div>
+               </div>
+            </div>
+         </div>
+      )}
+
+      {/* Auth Modal */}
+      {authMode && (
+        <AuthModal 
+          initialMode={authMode} 
+          onClose={() => setAuthMode(null)} 
+          onSuccess={(mode) => {
+             if (mode === 'guide') {
+                setIsGuide(true);
+                setShowGuideSetup(true);
+             }
+          }}
+        />
+      )}
+
+      {/* Safety / Verification Widget Mockup */}
+      {/* <SafetyWidget /> */}
+      
+    </div>
+  );
+}
+
+
+
