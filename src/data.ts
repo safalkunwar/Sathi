@@ -71,9 +71,9 @@ export const COMPANIONS: Companion[] = [
   {
     id: 'c9',
     name: 'Safal Kunwar',
-    age: 28,
+    age: 24,
     gender: 'Male',
-    bio: "Passionate about trekking, mountain biking, and exploring the hidden gems of Pokhara. I can be your ultimate guide to the Annapurna region and best lakeside cafes.",
+    bio: "Passionate about trekking, mountain biking, and exploring the hidden gems of Pokhara. I can be your ultimate guide to the whatever your destination.",
     hourlyRate: 22,
     rating: 5.0,
     reviewsCount: 156,
@@ -81,9 +81,9 @@ export const COMPANIONS: Companion[] = [
     location: 'Pokhara',
     languages: ['English', 'Nepali'],
     interests: ['Trekking', 'Outdoors', 'Coffee'],
-    imageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800&auto=format&fit=crop',
+    imageUrl: 'https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-6/595309955_1537495447400950_8564751214332148172_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx2047x2048&ctp=s2047x2048&_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=TCK1vGdFKesQ7kNvwF_Nyib&_nc_oc=AdoaUc0g_ShpzbyRzyNX68Ga807gHs0sd0FKYxg0PmWrR2vr38u-NUhjzIlZz_pplSs&_nc_zt=23&_nc_ht=scontent.fpkr1-1.fna&_nc_gid=lM9nFhFMb_KRw4UV9epiPQ&_nc_ss=7b2a8&oh=00_AQCX1zqDZPuWJqLO5hjsuoseeJXUWpTMAq2M-h62CzO6Rw&oe=6A56363B&auto=format&fit=crop',
     images: [
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800&auto=format&fit=crop'
+      'https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-6/595309955_1537495447400950_8564751214332148172_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx2047x2048&ctp=s2047x2048&_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=TCK1vGdFKesQ7kNvwF_Nyib&_nc_oc=AdoaUc0g_ShpzbyRzyNX68Ga807gHs0sd0FKYxg0PmWrR2vr38u-NUhjzIlZz_pplSs&_nc_zt=23&_nc_ht=scontent.fpkr1-1.fna&_nc_gid=lM9nFhFMb_KRw4UV9epiPQ&_nc_ss=7b2a8&oh=00_AQCX1zqDZPuWJqLO5hjsuoseeJXUWpTMAq2M-h62CzO6Rw&oe=6A56363B&auto=format&fit=crop'
     ]
   },
   {
