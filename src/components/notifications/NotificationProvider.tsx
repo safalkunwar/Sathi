@@ -12,16 +12,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!currentUser) return;
 
     const setupNotifications = async () => {
-      const granted = await notificationService.requestPermission();
-      if (!granted) return;
+      try {
+        const granted = await notificationService.requestPermission();
+        if (!granted) return;
 
-      const token = await notificationService.getFcmToken();
-      if (!token) return;
+        const token = await notificationService.getFcmToken();
+        if (!token) return;
 
-      await firestore.updateDocument(`users/${currentUser.id}`, {
-        fcmToken: token,
-        updatedAt: new Date().toISOString(),
-      });
+        await firestore.updateDocument(`users/${currentUser.id}`, {
+          fcmToken: token,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('Notification setup failed:', err);
+      }
     };
 
     setupNotifications();

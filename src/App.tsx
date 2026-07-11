@@ -8,6 +8,7 @@ import { AuthGuard } from './components/guards/AuthGuard';
 import { AdminGuard } from './components/guards/AdminGuard';
 import { LoadingScreen } from './components/LoadingScreen';
 import { NotificationProvider } from './components/notifications/NotificationProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppRoutes() {
   const { loading } = useAppContext();
@@ -66,14 +67,16 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppProvider>
-        <ToastProvider>
-          <NotificationProvider>
-            <AppRoutes />
-          </NotificationProvider>
-        </ToastProvider>
-      </AppProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AppProvider>
+          <ToastProvider>
+            <NotificationProvider>
+              <AppRoutes />
+            </NotificationProvider>
+          </ToastProvider>
+        </AppProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

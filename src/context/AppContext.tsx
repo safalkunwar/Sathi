@@ -71,6 +71,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       } catch (err) {
         console.error('Failed to load user profile:', err);
+        if (!cancelled) setCurrentUser(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
