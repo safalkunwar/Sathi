@@ -64,7 +64,7 @@ export const authService = {
 
   onAuthStateChanged: (callback: (user: AuthUser | null) => void) => {
     if (!auth) {
-      console.warn('Auth requested before Firebase Auth was initialized');
+      console.warn('[SATHI] Auth requested before Firebase Auth was initialized');
       callback(null);
       return () => {};
     }
@@ -72,6 +72,7 @@ export const authService = {
     try {
       return onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
         try {
+          console.log('[SATHI] Auth state changed:', firebaseUser ? `uid=${firebaseUser.uid}` : 'null');
           if (!firebaseUser) {
             callback(null);
             return;
@@ -79,12 +80,12 @@ export const authService = {
           const claims = await getIdTokenResult(firebaseUser).then(r => r.claims).catch(() => ({}));
           callback({ ...authService.toAuthUser(firebaseUser), claims });
         } catch (err) {
-          console.error('Auth state change error:', err);
+          console.error('[SATHI] Auth state change error:', err);
           callback(null);
         }
       });
     } catch (err) {
-      console.error('Failed to subscribe to auth state:', err);
+      console.error('[SATHI] Failed to subscribe to auth state:', err);
       callback(null);
       return () => {};
     }

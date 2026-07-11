@@ -16,8 +16,12 @@ if (rootEl) {
   rootEl.textContent = 'MOUNTING SATHI...';
 }
 
+console.log('[SATHI] main.tsx executing, root exists:', !!rootEl);
+
 createRoot(rootEl!).render(
   <StrictMode>
     <App />
   </StrictMode>,
 );
+
+console.log('[SATHI] App rendered');

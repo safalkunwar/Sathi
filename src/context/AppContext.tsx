@@ -45,13 +45,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[SATHI] AppProvider auth effect starting');
     let cancelled = false;
     const unsubscribe = authService.onAuthStateChanged(async (authUser) => {
       if (cancelled) return;
       try {
         const user = mapAuthUserToUser(authUser);
+        console.log('[SATHI] AppProvider auth user:', user ? `uid=${user.id}` : 'null');
         if (user) {
           const profile = await firestore.getDocument<User>(`users/${user.id}`);
+          console.log('[SATHI] Firestore user profile:', profile ? 'found' : 'not found');
           if (profile && !cancelled) {
             setCurrentUser({ ...user, role: profile.role || 'customer', favorites: profile.favorites || [] });
           } else if (!cancelled) {
@@ -70,10 +73,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           if (!cancelled) setCurrentUser(null);
         }
       } catch (err) {
-        console.error('Failed to load user profile:', err);
+        console.error('[SATHI] Failed to load user profile:', err);
         if (!cancelled) setCurrentUser(null);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          console.log('[SATHI] AppProvider loading=false');
+          setLoading(false);
+        }
       }
     });
     return () => {
