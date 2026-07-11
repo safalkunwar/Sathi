@@ -80,6 +80,26 @@ export interface Conversation {
   unreadCount: number;
 }
 
+export interface Activity {
+  id: string;
+  title: string;
+  imageUrl?: string;
+  image?: string;
+  duration: string;
+  avgPrice: number;
+  companionCount: number;
+}
+
+export interface Event {
+  id: string;
+  date: string;
+  time: string;
+  title: string;
+  location: string;
+  spots: number;
+  participants?: number | { length: number };
+}
+
 export interface Notification {
   id: string;
   userId: string;

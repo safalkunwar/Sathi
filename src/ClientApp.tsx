@@ -483,7 +483,7 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
                      <div key={booking.id} className="bg-[#17191C] border border-[#2A2D31] rounded-2xl p-6 flex items-center justify-between">
                         <div>
                            <h3 className="font-bold text-white mb-1">Booking with {companion?.name}</h3>
-                           <p className="text-sm text-[#8E9299]">Date: {booking.date} at {booking.startTime}</p>
+                           <p className="text-sm text-[#8E9299]">Date: {booking.date} at {booking.time}</p>
                            <p className="text-sm text-[#8E9299]">Duration: {booking.duration} hours</p>
                         </div>
                         <div className="text-right">

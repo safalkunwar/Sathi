@@ -1,4 +1,4 @@
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, type Unsubscribe, type Query, type DocumentData } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, type Unsubscribe, type Query, type DocumentData, type Firestore } from 'firebase/firestore';
 import { db } from '../firebase';
 
 type QueryCondition = {
@@ -15,7 +15,7 @@ export interface QueryOptions {
 };
 
 const buildQuery = <T = DocumentData>(collectionName: string, options: QueryOptions = {}): Query<T> => {
-  const base = collection(db, collectionName);
+  const base = collection(requireDb(), collectionName);
   let q: Query<T> = base;
 
   if (options.where) {
@@ -35,36 +35,34 @@ const buildQuery = <T = DocumentData>(collectionName: string, options: QueryOpti
   return q;
 };
 
+const requireDb = (): Firestore => {
+  if (!db) throw new Error('Firebase is not configured. Set your VITE_FIREBASE_* environment variables.');
+  return db;
+};
+
 export const firestore = {
-  collection: <T = DocumentData>(name: string) => {
-    if (!db) throw new Error('Firestore is not initialized');
-    return collection(db, name);
-  },
+  collection: <T = DocumentData>(name: string) => collection(requireDb(), name),
 
   getDocument: async <T = DocumentData>(path: string): Promise<T | null> => {
-    if (!db) return null;
-    const snap = await getDoc(doc(db, path));
+    const snap = await getDoc(doc(requireDb(), path));
     if (!snap.exists()) return null;
     return { id: snap.id, ...snap.data() } as T;
   },
 
   setDocument: async (path: string, data: Record<string, unknown>, merge = false) => {
-    if (!db) return path.split('/').pop() || path;
-    const ref = doc(db, path);
+    const ref = doc(requireDb(), path);
     await setDoc(ref, data, { merge });
     return ref.id;
   },
 
   updateDocument: async (path: string, data: Record<string, unknown>) => {
-    if (!db) return path.split('/').pop() || path;
-    const ref = doc(db, path);
+    const ref = doc(requireDb(), path);
     await updateDoc(ref, data);
     return ref.id;
   },
 
   deleteDocument: async (path: string) => {
-    if (!db) return;
-    await deleteDoc(doc(db, path));
+    await deleteDoc(doc(requireDb(), path));
   },
 
   getDocuments: async <T = DocumentData>(collectionName: string, options: QueryOptions = {}): Promise<T[]> => {
