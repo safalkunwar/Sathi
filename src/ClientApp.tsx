@@ -5,11 +5,13 @@
 
 import { StrictMode, useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import React from 'react';
 import { Navbar } from './components/Navbar';
 import { CompanionProfileModal } from './components/modals/CompanionProfileModal';
 import { AuthModal } from './components/AuthModal';
 import { MessagesTab } from './components/messages/MessagesTab';
 import { DashboardTab } from './components/dashboard/DashboardTab';
+import { PartnerDashboard } from './components/dashboard/PartnerDashboard';
 import { SafetyWidget } from './components/SafetyWidget';
 import { COMPANIONS, STORIES } from './data';
 import { Companion, ExperienceStory } from './types';
@@ -17,12 +19,21 @@ import { MapPin, Star, ShieldCheck, Languages, Search, Play, Clock } from 'lucid
 import * as motion from 'motion/react-client';
 import { useAppContext } from './context/AppContext';
 import { useToast } from './components/ui/Toast';
+import { useCompanions, useStories, useActivities, useEvents } from './hooks/useFirestoreData';
 import { AnimatePresence } from 'motion/react';
 
-export function ClientApp() {
+interface ClientAppProps {
+  initialTab?: 'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard' | 'partner';
+}
+
+export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
   const { bookings, currentUser } = useAppContext();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard'>('explore');
+  const { companions: fetchedCompanions, loading: companionsLoading } = useCompanions();
+  const { stories: fetchedStories, loading: storiesLoading } = useStories();
+  const { activities, loading: activitiesLoading } = useActivities();
+  const { events, loading: eventsLoading } = useEvents();
+  const [activeTab, setActiveTab] = useState<'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard' | 'partner'>(initialTab || 'explore');
   const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingStory, setViewingStory] = useState<ExperienceStory | null>(null);
@@ -43,7 +54,10 @@ export function ClientApp() {
     return () => clearTimeout(timer);
   }, [showSOS]);
   
-  const filteredCompanions = COMPANIONS.filter(c => 
+  const companions = fetchedCompanions.length > 0 ? fetchedCompanions : COMPANIONS;
+  const stories = fetchedStories.length > 0 ? fetchedStories : STORIES;
+
+  const filteredCompanions = companions.filter(c => 
     (c.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.interests.some(i => i.toLowerCase().includes(searchQuery.toLowerCase()))) &&
@@ -122,7 +136,7 @@ export function ClientApp() {
                     <span className="text-[11px] md:text-xs text-[#8E9299] truncate w-full text-center">Share Moment</span>
                  </div>
                  
-                 {STORIES.map((story) => (
+                 {stories.map((story) => (
                     <motion.div 
                       key={story.id} 
                       whileHover={{ scale: 1.05 }}
@@ -243,7 +257,7 @@ export function ClientApp() {
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-[#2A2D31]/50 pointer-events-auto">
                       <div>
                         <span className="font-semibold text-white text-[15px]">
-                          ${companion.hourlyRate} <span className="text-[12px] md:text-sm font-normal text-[#5A5E66]">/hr</span>
+                          NPR {companion.hourlyRate} <span className="text-[12px] md:text-sm font-normal text-[#5A5E66]">/hr</span>
                         </span>
                         <div className="text-[12px] text-[#8E9299] mt-0.5 font-medium flex items-center gap-1">
                           <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" /> {companion.rating} <span className="opacity-70">({companion.reviewsCount})</span>
@@ -301,39 +315,39 @@ export function ClientApp() {
               </div>
             </div>
 
-            {/* Popular Activities */}
-            <div className="mt-16 md:mt-24">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl md:text-3xl font-bold text-white">Popular Activities</h2>
-                <button onClick={() => showToast('Activities directory coming soon', 'info')} className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">Explore All</button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 {[
-                   { title: 'Local Coffee Chat', image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800&auto=format&fit=crop', duration: '1-2 hours', avgPrice: '$15/hr', count: '124 companions' },
-                   { title: 'Street Food Tour', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop', duration: '2-3 hours', avgPrice: '$20/hr', count: '85 companions' },
-                   { title: 'City Photography', image: 'https://images.unsplash.com/photo-1516862523118-a3724eb136d7?q=80&w=800&auto=format&fit=crop', duration: '2-4 hours', avgPrice: '$25/hr', count: '62 companions' }
-                 ].map((activity, idx) => (
-                   <div key={idx} onClick={() => { setSelectedCategory(activity.title); showToast(`Filtering by ${activity.title}`, 'success'); }} className="group cursor-pointer rounded-[20px] overflow-hidden border border-[#2A2D31] bg-[#17191C] relative hover:border-[#C8A25E]/50 transition-colors">
-                      <div className="h-48 relative overflow-hidden">
-                         <img src={activity.image} alt={activity.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                         <div className="absolute inset-0 bg-gradient-to-t from-[#17191C] to-transparent"></div>
-                      </div>
-                      <div className="p-6 relative z-10 -mt-12">
-                         <h3 className="text-xl font-bold text-white mb-2 drop-shadow-md">{activity.title}</h3>
-                         <div className="flex flex-wrap items-center gap-4 text-sm text-[#8E9299]">
-                            <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {activity.duration}</span>
-                            <span className="flex items-center gap-1.5"><span className="text-[#C8A25E]">Avg.</span> {activity.avgPrice}</span>
-                         </div>
-                         <div className="mt-4 pt-4 border-t border-[#2A2D31] flex items-center justify-between text-sm">
-                            <span className="text-[#8E9299]">{activity.count}</span>
-                            <span className="text-[#C8A25E] font-medium group-hover:translate-x-1 transition-transform inline-block">Explore →</span>
-                         </div>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-            </div>
+             {/* Popular Activities */}
+             <div className="mt-16 md:mt-24">
+               <div className="flex items-center justify-between mb-8">
+                 <h2 className="text-xl md:text-3xl font-bold text-white">Popular Activities</h2>
+                 <button onClick={() => showToast('Activities directory coming soon', 'info')} className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">Explore All</button>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {(activities.length > 0 ? activities : [
+                     { title: 'Local Coffee Chat', image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800&auto=format&fit=crop', duration: '1-2 hours', avgPrice: 1500, companionCount: 124 },
+                     { title: 'Street Food Tour', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop', duration: '2-3 hours', avgPrice: 2000, companionCount: 85 },
+                     { title: 'City Photography', image: 'https://images.unsplash.com/photo-1516862523118-a3724eb136d7?q=80&w=800&auto=format&fit=crop', duration: '2-4 hours', avgPrice: 2500, companionCount: 62 }
+                  ]).map((activity, idx) => (
+                    <div key={activity.id || idx} onClick={() => { setSelectedCategory(activity.title); showToast(`Filtering by ${activity.title}`, 'success'); }} className="group cursor-pointer rounded-[20px] overflow-hidden border border-[#2A2D31] bg-[#17191C] relative hover:border-[#C8A25E]/50 transition-colors">
+                       <div className="h-48 relative overflow-hidden">
+                           <img src={activity.imageUrl || activity.image} alt={activity.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#17191C] to-transparent"></div>
+                       </div>
+                       <div className="p-6 relative z-10 -mt-12">
+                          <h3 className="text-xl font-bold text-white mb-2 drop-shadow-md">{activity.title}</h3>
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-[#8E9299]">
+                             <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {activity.duration}</span>
+                             <span className="flex items-center gap-1.5"><span className="text-[#C8A25E]">Avg.</span> NPR {activity.avgPrice}/hr</span>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-[#2A2D31] flex items-center justify-between text-sm">
+                             <span className="text-[#8E9299]">{activity.companionCount} companions</span>
+                             <span className="text-[#C8A25E] font-medium group-hover:translate-x-1 transition-transform inline-block">Explore →</span>
+                          </div>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+             </div>
 
             {/* Trust & Safety */}
             <div className="mt-16 md:mt-24 mb-8">
@@ -384,7 +398,7 @@ export function ClientApp() {
                       </div>
                       <p className="text-white text-sm md:text-base leading-relaxed mb-6 flex-1">"{testimonial.review}"</p>
                       <div className="flex items-center gap-4 mt-auto">
-                         <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full border-2 border-[#2A2D31]" />
+                          <img src={testimonial.avatar} alt={testimonial.name} loading="lazy" className="w-12 h-12 rounded-full border-2 border-[#2A2D31]" />
                          <div>
                             <h4 className="font-bold text-white text-sm">{testimonial.name}</h4>
                             <p className="text-xs text-[#8E9299]">{testimonial.city} • {testimonial.activity}</p>
@@ -395,48 +409,53 @@ export function ClientApp() {
               </div>
             </div>
 
-            {/* Upcoming Local Events */}
-            <div className="mt-16 md:mt-24 mb-12">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl md:text-3xl font-bold text-white">Upcoming Local Events</h2>
-                <button onClick={() => showToast('Event calendar coming soon', 'info')} className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">View Calendar</button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {[
-                   { date: 'Oct 24', time: '10:00 AM', title: 'Weekend Hiking Group', location: 'National Park Trailhead', spots: 3, participants: 8 },
-                   { date: 'Oct 25', time: '02:00 PM', title: 'Art Exhibition & Coffee', location: 'Downtown Gallery', spots: 2, participants: 5 },
-                   { date: 'Oct 26', time: '06:30 PM', title: 'Language Exchange Meetup', location: 'Central Cafe', spots: 5, participants: 15 },
-                   { date: 'Oct 28', time: '09:00 AM', title: 'Photography Walk', location: 'Historic District', spots: 1, participants: 6 }
-                 ].map((event, idx) => (
-                   <div key={idx} className="bg-[#17191C] border border-[#2A2D31] p-5 md:p-6 rounded-[20px] flex gap-4 hover:border-[#C8A25E]/50 transition-colors">
-                      <div className="shrink-0 w-16 h-16 rounded-2xl bg-[#1E2124] border border-[#2A2D31] flex flex-col items-center justify-center">
-                         <span className="text-[#C8A25E] text-xs font-bold uppercase">{event.date.split(' ')[0]}</span>
-                         <span className="text-white font-bold text-lg leading-none">{event.date.split(' ')[1]}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                         <h3 className="font-bold text-white text-lg truncate">{event.title}</h3>
-                         <p className="text-sm text-[#8E9299] flex items-center gap-1.5 mt-1 truncate">
-                           <MapPin className="w-3.5 h-3.5" /> {event.location}
-                         </p>
-                         <p className="text-xs text-[#8E9299] flex items-center gap-1.5 mt-1 truncate">
-                           <Clock className="w-3.5 h-3.5" /> {event.time}
-                         </p>
-                         <div className="flex items-center justify-between mt-4">
-                            <span className="text-xs text-[#8E9299]">
-                              <span className="text-white font-medium">{event.participants}</span> going • <span className="text-[#C8A25E]">{event.spots} spots left</span>
-                            </span>
-                            <button onClick={() => {
-                              if (!currentUser) setAuthMode('login');
-                              else showToast(`Successfully joined ${event.title}!`, 'success');
-                            }} className="px-4 py-1.5 bg-[#1E2124] text-white border border-[#2A2D31] text-xs font-medium rounded-lg hover:bg-[#C8A25E] hover:text-[#0F1113] hover:border-[#C8A25E] transition-colors">
-                               Join
-                            </button>
-                         </div>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-            </div>
+             {/* Upcoming Local Events */}
+             <div className="mt-16 md:mt-24 mb-12">
+               <div className="flex items-center justify-between mb-8">
+                 <h2 className="text-xl md:text-3xl font-bold text-white">Upcoming Local Events</h2>
+                 <button onClick={() => showToast('Event calendar coming soon', 'info')} className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">View Calendar</button>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {(events.length > 0 ? events : [
+                    { date: '2026-07-24', time: '10:00 AM', title: 'Weekend Hiking Group', location: 'National Park Trailhead', spots: 3, participants: 8 },
+                    { date: '2026-07-25', time: '02:00 PM', title: 'Art Exhibition & Coffee', location: 'Downtown Gallery', spots: 2, participants: 5 },
+                    { date: '2026-07-26', time: '06:30 PM', title: 'Language Exchange Meetup', location: 'Central Cafe', spots: 5, participants: 15 },
+                    { date: '2026-07-28', time: '09:00 AM', title: 'Photography Walk', location: 'Historic District', spots: 1, participants: 6 }
+                  ]).map((event, idx) => {
+                    const dateObj = new Date(event.date);
+                    const month = dateObj.toLocaleString('en-US', { month: 'short' });
+                    const day = dateObj.getDate();
+                    return (
+                    <div key={event.id || idx} className="bg-[#17191C] border border-[#2A2D31] p-5 md:p-6 rounded-[20px] flex gap-4 hover:border-[#C8A25E]/50 transition-colors">
+                       <div className="shrink-0 w-16 h-16 rounded-2xl bg-[#1E2124] border border-[#2A2D31] flex flex-col items-center justify-center">
+                          <span className="text-[#C8A25E] text-xs font-bold uppercase">{month}</span>
+                          <span className="text-white font-bold text-lg leading-none">{day}</span>
+                       </div>
+                       <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-white text-lg truncate">{event.title}</h3>
+                          <p className="text-sm text-[#8E9299] flex items-center gap-1.5 mt-1 truncate">
+                            <MapPin className="w-3.5 h-3.5" /> {event.location}
+                          </p>
+                          <p className="text-xs text-[#8E9299] flex items-center gap-1.5 mt-1 truncate">
+                            <Clock className="w-3.5 h-3.5" /> {event.time}
+                          </p>
+                          <div className="flex items-center justify-between mt-4">
+                             <span className="text-xs text-[#8E9299]">
+                               <span className="text-white font-medium">{event.participants?.length || event.participants || 0}</span> going • <span className="text-[#C8A25E]">{event.spots} spots left</span>
+                             </span>
+                             <button onClick={() => {
+                               if (!currentUser) setAuthMode('login');
+                               else showToast(`Successfully joined ${event.title}!`, 'success');
+                             }} className="px-4 py-1.5 bg-[#1E2124] text-white border border-[#2A2D31] text-xs font-medium rounded-lg hover:bg-[#C8A25E] hover:text-[#0F1113] hover:border-[#C8A25E] transition-colors">
+                                Join
+                             </button>
+                          </div>
+                       </div>
+                    </div>
+                    );
+                  })}
+               </div>
+             </div>
 
           </motion.div>
         )}
@@ -447,13 +466,19 @@ export function ClientApp() {
           </motion.div>
         )}
 
+        {activeTab === 'partner' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+             <PartnerDashboard />
+          </motion.div>
+        )}
+
         {activeTab === 'bookings' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
              <h2 className="text-2xl font-bold text-white mb-6 border-b border-[#2A2D31] pb-4">My Bookings</h2>
              {bookings.filter(b => b.userId === currentUser?.id).length > 0 ? (
                <div className="grid gap-4">
                  {bookings.filter(b => b.userId === currentUser?.id).map(booking => {
-                   const companion = COMPANIONS.find(c => c.id === booking.companionId);
+                   const companion = companions.find(c => c.id === booking.companionId);
                    return (
                      <div key={booking.id} className="bg-[#17191C] border border-[#2A2D31] rounded-2xl p-6 flex items-center justify-between">
                         <div>
@@ -462,7 +487,7 @@ export function ClientApp() {
                            <p className="text-sm text-[#8E9299]">Duration: {booking.duration} hours</p>
                         </div>
                         <div className="text-right">
-                           <span className="block font-bold text-[#C8A25E]">${booking.totalPrice}</span>
+                            <span className="block font-bold text-[#C8A25E]">NPR {booking.totalPrice}</span>
                            <span className={`text-xs px-2 py-1 rounded-full border ${booking.status === 'confirmed' ? 'bg-green-500/10 border-green-500/50 text-green-500' : 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500'}`}>
                              {booking.status}
                            </span>
@@ -544,14 +569,14 @@ export function ClientApp() {
                </div>
 
                {/* Left/Right Click Areas */}
-               <div className="absolute inset-y-20 left-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = STORIES.findIndex(s => s.id === viewingStory.id); if (idx > 0) setViewingStory(STORIES[idx - 1]); }}></div>
-               <div className="absolute inset-y-20 right-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = STORIES.findIndex(s => s.id === viewingStory.id); if (idx < STORIES.length - 1) setViewingStory(STORIES[idx + 1]); else setViewingStory(null); }}></div>
+               <div className="absolute inset-y-20 left-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = stories.findIndex(s => s.id === viewingStory.id); if (idx > 0) setViewingStory(stories[idx - 1]); }}></div>
+               <div className="absolute inset-y-20 right-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = stories.findIndex(s => s.id === viewingStory.id); if (idx < stories.length - 1) setViewingStory(stories[idx + 1]); else setViewingStory(null); }}></div>
 
                <div className="absolute bottom-10 inset-x-0 p-6 flex justify-between items-end gap-2 pointer-events-none">
                   <p className="text-white text-lg font-medium shadow-sm">{viewingStory.caption}</p>
                   
                   <div className="flex gap-1 mb-1">
-                    {STORIES.map((s) => (
+                    {stories.map((s) => (
                       <div key={s.id} className={`w-1.5 h-1.5 rounded-full ${s.id === viewingStory.id ? 'bg-white' : 'bg-white/30'}`} />
                     ))}
                   </div>
@@ -594,7 +619,7 @@ export function ClientApp() {
       )}
     </div>
   );
-}
+});
 
 
 

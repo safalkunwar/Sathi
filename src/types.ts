@@ -5,6 +5,7 @@ export interface User {
   avatar: string;
   role: 'guest' | 'customer' | 'companion' | 'admin';
   favorites: string[]; // Companion IDs
+  claims?: Record<string, unknown>;
 }
 
 export interface Review {
@@ -39,6 +40,7 @@ export interface Companion {
   reviewsCount: number;
   isVerified: boolean;
   location: string;
+  coordinates?: { latitude: number; longitude: number };
   languages: string[];
   interests: string[];
   imageUrl: string;

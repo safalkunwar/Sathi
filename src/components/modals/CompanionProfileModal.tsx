@@ -4,6 +4,7 @@ import { X, MapPin, Star, ShieldCheck, Languages, CheckCircle2, Clock, Calendar,
 import { Companion } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { BookingFlowModal } from './BookingFlowModal';
+import { MapPreview, MAP_CENTER } from '../maps/MapPreview';
 
 interface CompanionProfileModalProps {
   companion: Companion | null;
@@ -52,6 +53,9 @@ export const CompanionProfileModal: React.FC<CompanionProfileModalProps> = ({ co
           animate={{ opacity: 1, y: 0, scale: 1 }} 
           exit={{ opacity: 0, y: 100, scale: 0.95 }} 
           className="relative w-full max-w-4xl bg-[#0F1113] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] md:max-h-[85vh] border border-[#2A2D31]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="companion-profile-name"
         >
           {/* Header Image */}
           <div className="h-64 md:h-80 relative shrink-0">
@@ -79,7 +83,7 @@ export const CompanionProfileModal: React.FC<CompanionProfileModalProps> = ({ co
               {/* Left Column: Details */}
               <div className="flex-1">
                 <div className="flex items-end gap-4 mb-4">
-                  <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-2">
+                  <h1 id="companion-profile-name" className="text-3xl md:text-4xl font-bold text-white flex items-center gap-2">
                     {companion.name}, {companion.age}
                     {companion.isVerified && <ShieldCheck className="w-6 h-6 text-[#C8A25E]" title="Verified" />}
                   </h1>
@@ -105,9 +109,28 @@ export const CompanionProfileModal: React.FC<CompanionProfileModalProps> = ({ co
                       </span>
                     ))}
                   </div>
-                </div>
+                 </div>
 
-                {/* Reviews Summary Placeholder */}
+                 {companion.coordinates && (
+                   <div className="mb-8">
+                     <h2 className="text-xl font-bold text-white mb-3">Location</h2>
+                     <MapPreview
+                       center={{ lat: companion.coordinates.latitude, lng: companion.coordinates.longitude }}
+                       zoom={14}
+                       height="220px"
+                       markers={[
+                         {
+                           id: companion.id,
+                           position: { lat: companion.coordinates.latitude, lng: companion.coordinates.longitude },
+                           title: companion.location,
+                           subtitle: companion.name,
+                         },
+                       ]}
+                     />
+                   </div>
+                 )}
+
+                 {/* Reviews Summary Placeholder */}
                 <div className="mb-8">
                   <h2 className="text-xl font-bold text-white mb-4">Recent Reviews</h2>
                   {companion.reviews && companion.reviews.length > 0 ? (
@@ -133,7 +156,7 @@ export const CompanionProfileModal: React.FC<CompanionProfileModalProps> = ({ co
               <div className="w-full md:w-80 shrink-0">
                 <div className="bg-[#17191C] rounded-3xl p-6 border border-[#2A2D31] sticky top-0 shadow-xl">
                   <div className="mb-6 pb-6 border-b border-[#2A2D31]">
-                    <span className="text-3xl font-bold text-white">${companion.hourlyRate}</span>
+                     <span className="text-3xl font-bold text-white">NPR {companion.hourlyRate}</span>
                     <span className="text-[#8E9299]"> / hour</span>
                   </div>
 

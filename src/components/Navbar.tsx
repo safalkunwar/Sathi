@@ -4,8 +4,8 @@ import { useAppContext } from '../context/AppContext';
 import { useToast } from './ui/Toast';
 
 interface NavbarProps {
-  activeTab: 'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard';
-  setActiveTab: (tab: 'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard') => void;
+  activeTab: 'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard' | 'partner';
+  setActiveTab: (tab: 'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard' | 'partner') => void;
   onOpenAuth: (mode: 'login' | 'signup' | 'guide') => void;
   searchQuery?: string;
   setSearchQuery?: (q: string) => void;
@@ -48,61 +48,68 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-[#0F1113] border-b border-[#2A2D31] shadow-sm">
+    <nav className="sticky top-0 z-50 w-full bg-[#0F1113] border-b border-[#2A2D31] shadow-sm" role="navigation" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 md:h-16">
           {/* Logo / Mobile Menu Toggle */}
           <div 
-            className="flex items-center gap-2 md:gap-3 cursor-pointer select-none shrink-0" 
-            onClick={() => {
-              if (onLogoClick) onLogoClick();
-            }}
+             className="flex items-center gap-2 md:gap-3 cursor-pointer select-none shrink-0" 
+             onClick={() => {
+               if (onLogoClick) onLogoClick();
+             }}
+             role="button"
+             tabIndex={0}
+             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLogoClick?.(); } }}
+             aria-label="SATHI home"
           >
-             <div className="w-11 h-11 md:w-10 md:h-10 rounded-xl bg-[#C8A25E] flex items-center justify-center font-bold text-[#0F1113] text-xl" title="Click for SOS">
-                S
-             </div>
+              <div className="w-11 h-11 md:w-10 md:h-10 rounded-xl bg-[#C8A25E] flex items-center justify-center font-bold text-[#0F1113] text-xl" aria-hidden="true">
+                 S
+              </div>
              <span className="text-xl md:text-2xl font-semibold tracking-tight text-white hidden sm:block">SATHI<span className="text-[#C8A25E]">.</span></span>
           </div>
 
           {/* Mobile Search Bar */}
           <div className="md:hidden flex-1 mx-3 relative">
             <Search className="w-4 h-4 text-[#8E9299] absolute left-3.5 top-1/2 transform -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Search people..." 
-              className="w-full bg-[#1E2124]/50 backdrop-blur-md border border-[#2A2D31] rounded-[24px] h-11 pl-10 pr-4 text-[15px] text-white placeholder-[#8E9299] focus:outline-none focus:border-[#C8A25E] focus:bg-[#17191C] transition-all shadow-sm"
-              value={searchQuery || ''}
-              onChange={(e) => setSearchQuery?.(e.target.value)}
-            />
+             <input 
+               type="text" 
+               placeholder="Search people..." 
+               aria-label="Search people"
+               className="w-full bg-[#1E2124]/50 backdrop-blur-md border border-[#2A2D31] rounded-[24px] h-11 pl-10 pr-4 text-[15px] text-white placeholder-[#8E9299] focus:outline-none focus:border-[#C8A25E] focus:bg-[#17191C] transition-all shadow-sm"
+               value={searchQuery || ''}
+               onChange={(e) => setSearchQuery?.(e.target.value)}
+             />
           </div>
           
           {/* Desktop Search and Links */}
           <div className="hidden md:flex flex-1 items-center px-8">
             <div className="flex-1 max-w-xl mx-auto relative">
               <Search className="w-4 h-4 text-[#8E9299] absolute left-4 top-1/2 transform -translate-y-1/2" />
-              <input 
-                type="text" 
-                placeholder="Find friends, activities, or locations..." 
-                className="w-full bg-[#1E2124]/40 backdrop-blur-md border border-[#2A2D31] rounded-full h-11 pl-11 pr-4 text-sm text-white placeholder-[#8E9299] focus:outline-none focus:border-[#C8A25E] focus:bg-[#17191C] transition-all shadow-sm"
-                value={searchQuery || ''}
-                onChange={(e) => setSearchQuery?.(e.target.value)}
-              />
+               <input 
+                 type="text" 
+                 placeholder="Find friends, activities, or locations..." 
+                 aria-label="Search friends, activities, or locations"
+                 className="w-full bg-[#1E2124]/40 backdrop-blur-md border border-[#2A2D31] rounded-full h-11 pl-11 pr-4 text-sm text-white placeholder-[#8E9299] focus:outline-none focus:border-[#C8A25E] focus:bg-[#17191C] transition-all shadow-sm"
+                 value={searchQuery || ''}
+                 onChange={(e) => setSearchQuery?.(e.target.value)}
+               />
             </div>
             
-            <div className="flex items-center space-x-7 text-[15px] font-medium ml-6">
-              <button onClick={() => setActiveTab('explore')} className={`transition-colors ${activeTab === 'explore' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Discover</button>
-              <button onClick={() => setActiveTab('about')} className={`transition-colors ${activeTab === 'about' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Experiences</button>
-              {currentUser && (
-                <>
-                  <button onClick={() => setActiveTab('bookings')} className={`transition-colors ${activeTab === 'bookings' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Bookings</button>
-                  <button onClick={() => setActiveTab('messages')} className={`transition-colors ${activeTab === 'messages' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Messages</button>
-                </>
-              )}
-            </div>
+             <div className="flex items-center space-x-7 text-[15px] font-medium ml-6">
+               <button onClick={() => setActiveTab('explore')} className={`transition-colors ${activeTab === 'explore' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Discover</button>
+               <button onClick={() => setActiveTab('about')} className={`transition-colors ${activeTab === 'about' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Experiences</button>
+               {currentUser && (
+                 <>
+                   <button onClick={() => setActiveTab('bookings')} className={`transition-colors ${activeTab === 'bookings' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Bookings</button>
+                   <button onClick={() => setActiveTab('messages')} className={`transition-colors ${activeTab === 'messages' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Messages</button>
+                   <button onClick={() => setActiveTab('partner')} className={`transition-colors ${activeTab === 'partner' ? 'text-white' : 'text-[#8E9299] hover:text-[#C8A25E]'}`}>Partners</button>
+                 </>
+               )}
+             </div>
           </div>
 
           <div className="flex items-center space-x-3 md:space-x-4 relative">
-            <button className="hidden md:flex w-10 h-10 rounded-full bg-[#1E2124] border border-[#2A2D31] hover:border-[#C8A25E] transition-colors items-center justify-center text-[#8E9299] hover:text-[#C8A25E] relative focus:outline-none">
+            <button className="hidden md:flex w-10 h-10 rounded-full bg-[#1E2124] border border-[#2A2D31] hover:border-[#C8A25E] transition-colors items-center justify-center text-[#8E9299] hover:text-[#C8A25E] relative focus:outline-none" aria-label="Notifications">
               <Bell className="w-4 h-4" />
               {unreadCount > 0 && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#C8A25E] rounded-full border-2 border-[#1E2124]"></span>}
             </button>
@@ -111,6 +118,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
             <div ref={dropdownRef} className="relative">
               <button 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                aria-expanded={isDropdownOpen}
+                aria-controls="user-dropdown"
+                aria-label="User menu"
                 className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-[#1E2124] overflow-hidden border border-[#2A2D31] hover:border-[#C8A25E] transition-colors focus:outline-none flex items-center justify-center"
               >
                  {currentUser ? (
@@ -121,7 +131,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 top-12 mt-2 w-56 bg-[#17191C] border border-[#2A2D31] rounded-xl shadow-2xl py-2 z-50 overflow-hidden">
+                <div id="user-dropdown" className="absolute right-0 top-12 mt-2 w-56 bg-[#17191C] border border-[#2A2D31] rounded-xl shadow-2xl py-2 z-50 overflow-hidden" role="menu">
                    {currentUser ? (
                      <>
                        <div className="px-4 py-3 border-b border-[#2A2D31]">
@@ -129,11 +139,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
                           <p className="text-xs text-[#8E9299] truncate">{currentUser.email}</p>
                        </div>
                        
-                       <div className="py-1 border-b border-[#2A2D31]">
-                         <button onClick={() => { setActiveTab('dashboard'); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[#8E9299] hover:bg-[#1E2124] hover:text-white flex items-center gap-2">
-                            <UserCircle className="w-4 h-4" /> Dashboard
-                         </button>
-                       </div>
+                        <div className="py-1 border-b border-[#2A2D31]" role="group">
+                          <button onClick={() => { setActiveTab('dashboard'); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-[#8E9299] hover:bg-[#1E2124] hover:text-white flex items-center gap-2" role="menuitem">
+                             <UserCircle className="w-4 h-4" /> Dashboard
+                          </button>
+                        </div>
                      </>
                    ) : (
                      <div className="py-1 border-b border-[#2A2D31]">

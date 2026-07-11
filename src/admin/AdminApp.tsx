@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useState, useEffect } from 'react';
 import { Activity, UserCheck, CalendarDays, ShieldAlert, MessageSquare, LogOut } from 'lucide-react';
 import * as motion from 'motion/react-client';
+import { firestore } from '../services/firestore';
 
 import { AdminOverview } from './AdminOverview';
 import { AdminGuides } from './AdminGuides';
@@ -36,7 +38,7 @@ export function AdminApp() {
            </button>
         </nav>
         <div className="p-4 border-t border-[#222]">
-           <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition-colors">
+           <a href="/" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-[#222] rounded-lg transition-colors">
               <LogOut className="w-4 h-4" />
               Exit to App
            </a>
@@ -50,7 +52,7 @@ export function AdminApp() {
             <span className="font-semibold text-white">SATHI Admin</span>
             <div className="flex gap-2">
                <button onClick={() => setActiveTab('security')} className="p-2 text-red-500 hover:text-red-400"><ShieldAlert className="w-5 h-5" /></button>
-               <a href="#" className="p-2 text-gray-400 hover:text-white"><LogOut className="w-5 h-5" /></a>
+               <a href="/" className="p-2 text-gray-400 hover:text-white"><LogOut className="w-5 h-5" /></a>
             </div>
          </div>
          
@@ -62,7 +64,7 @@ export function AdminApp() {
                 onClick={() => setActiveTab(tab as any)}
                 className={`px-4 py-3 text-xs font-medium whitespace-nowrap capitalize ${activeTab === tab ? 'text-[#C8A25E] border-b-2 border-[#C8A25E]' : 'text-gray-400'}`}
              >
-               {tab}
+                {tab}
              </button>
            ))}
          </div>

@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { User, Companion, Booking, Message, Notification, Conversation } from '../types';
-import { COMPANIONS } from '../data';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { User, Companion, Booking, Message, Notification } from '../types';
+import { authService, AuthUser } from '../services/auth';
+import { firestore } from '../services/firestore';
+import { offlineStorage } from '../services/storage';
 
 interface AppState {
   currentUser: User | null;
@@ -10,43 +12,101 @@ interface AppState {
   bookings: Booking[];
   addBooking: (booking: Booking) => void;
   updateBookingStatus: (id: string, status: Booking['status']) => void;
-  conversations: Conversation[];
-  messages: Message[];
-  sendMessage: (conversationId: string, text: string) => void;
+  getConversationId: (otherUserId: string) => string;
   notifications: Notification[];
   markNotificationRead: (id: string) => void;
+  loading: boolean;
 }
-
-const defaultUser: User = {
-  id: 'u1',
-  name: 'Alex Visitor',
-  email: 'alex@example.com',
-  avatar: 'https://ui-avatars.com/api/?name=Alex&background=random',
-  role: 'customer',
-  favorites: []
-};
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
+const mapAuthUserToUser = (authUser: AuthUser | null): User | null => {
+  if (!authUser) return null;
+  return {
+    id: authUser.uid,
+    name: authUser.displayName || 'User',
+    email: authUser.email || '',
+    avatar: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || 'User')}&background=random`,
+    role: 'customer',
+    favorites: [],
+    claims: authUser.claims,
+  };
+};
+
+export const getConversationId = (userIdA: string, userIdB: string): string => {
+  return [userIdA, userIdB].sort().join('_');
+};
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(defaultUser);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleFavorite = (companionId: string) => {
-    setFavorites(prev => 
-      prev.includes(companionId) 
-        ? prev.filter(id => id !== companionId)
-        : [...prev, companionId]
-    );
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const unsubscribe = authService.onAuthStateChanged(async (authUser) => {
+      if (cancelled) return;
+      try {
+        const user = mapAuthUserToUser(authUser);
+        if (user) {
+          const profile = await firestore.getDocument<User>(`users/${user.id}`);
+          if (profile && !cancelled) {
+            setCurrentUser({ ...user, role: profile.role || 'customer', favorites: profile.favorites || [] });
+          } else if (!cancelled) {
+            await firestore.setDocument(`users/${user.id}`, {
+              name: user.name,
+              email: user.email,
+              avatar: user.avatar,
+              role: 'customer',
+              favorites: [],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+            if (!cancelled) setCurrentUser(user);
+          }
+        } else {
+          if (!cancelled) setCurrentUser(null);
+        }
+      } catch (err) {
+        console.error('Failed to load user profile:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
-  const addBooking = (booking: Booking) => {
+  const toggleFavorite = useCallback((companionId: string) => {
+    setFavorites(prev => {
+      const next = prev.includes(companionId) ? prev.filter(id => id !== companionId) : [...prev, companionId];
+      if (currentUser) {
+        firestore.updateDocument(`users/${currentUser.id}`, { favorites: next });
+      }
+      return next;
+    });
+  }, [currentUser]);
+
+  const addBooking = useCallback(async (booking: Booking) => {
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
+    if (!isOnline) {
+      await offlineStorage.cacheItem('pendingBookings', { ...booking, _pending: true });
+      setBookings(prev => [...prev, { ...booking, _pending: true }]);
+      return;
+    }
+
     setBookings(prev => [...prev, booking]);
-    // Add notification
+    const ref = await firestore.setDocument(`bookings/${booking.id}`, {
+      ...booking,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
     const notification: Notification = {
       id: `notif-${Date.now()}`,
       userId: currentUser?.id || 'guest',
@@ -54,16 +114,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       message: `Your booking for ${booking.date} is now pending.`,
       type: 'booking',
       isRead: false,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     setNotifications(prev => [notification, ...prev]);
-  };
+    await firestore.setDocument(`notifications/${notification.id}`, notification);
+  }, [currentUser]);
 
-  const updateBookingStatus = (id: string, status: Booking['status']) => {
+  const updateBookingStatus = useCallback(async (id: string, status: Booking['status']) => {
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
-  };
+    await firestore.updateDocument(`bookings/${id}`, { status, updatedAt: new Date().toISOString() });
+  }, []);
 
-  const sendMessage = (conversationId: string, text: string) => {
+  const sendMessage = useCallback(async (conversationId: string, text: string) => {
     if (!currentUser) return;
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
@@ -71,19 +133,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       senderId: currentUser.id,
       text,
       timestamp: new Date().toISOString(),
-      isRead: true
+      isRead: false,
     };
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Update conversation last message
-    setConversations(prev => prev.map(c => 
-      c.id === conversationId ? { ...c, lastMessage: newMessage } : c
-    ));
-  };
+    await firestore.setDocument(`messages/${newMessage.id}`, newMessage);
 
-  const markNotificationRead = (id: string) => {
+    await firestore.updateDocument(`conversations/${conversationId}`, {
+      lastMessage: {
+        id: newMessage.id,
+        conversationId,
+        senderId: newMessage.senderId,
+        text: newMessage.text,
+        timestamp: newMessage.timestamp,
+        isRead: false,
+      },
+      updatedAt: newMessage.timestamp,
+    });
+  }, [currentUser]);
+
+  const markNotificationRead = useCallback(async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  };
+    await firestore.updateDocument(`notifications/${id}`, { isRead: true });
+  }, []);
+
+  const getConversationWith = useCallback((otherUserId: string): string => {
+    if (!currentUser) return '';
+    return getConversationId(currentUser.id, otherUserId);
+  }, [currentUser]);
 
   return (
     <AppContext.Provider value={{
@@ -94,11 +169,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       bookings,
       addBooking,
       updateBookingStatus,
-      conversations,
-      messages,
-      sendMessage,
+      getConversationId: getConversationWith,
       notifications,
-      markNotificationRead
+      markNotificationRead,
+      loading,
     }}>
       {children}
     </AppContext.Provider>

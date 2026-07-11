@@ -51,7 +51,7 @@ export const DashboardTab: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-[#17191C] border border-[#2A2D31] rounded-2xl p-6">
               <h3 className="text-[#8E9299] text-sm uppercase tracking-wider mb-2">Total Spent</h3>
-              <p className="text-3xl font-bold text-white">${totalSpent.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-white">NPR {totalSpent.toFixed(2)}</p>
             </div>
             <div className="bg-[#17191C] border border-[#2A2D31] rounded-2xl p-6">
               <h3 className="text-[#8E9299] text-sm uppercase tracking-wider mb-2">Saved Favorites</h3>
@@ -101,7 +101,7 @@ export const DashboardTab: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
             <div className="bg-[#1E2124] rounded-2xl p-6 border border-[#2A2D31]">
               <h3 className="text-[#8E9299] text-sm uppercase tracking-wider mb-2">Total Earnings</h3>
-              <p className="text-3xl font-bold text-white">$1,250.00</p>
+              <p className="text-3xl font-bold text-white">NPR 1,250.00</p>
             </div>
             <div className="bg-[#1E2124] rounded-2xl p-6 border border-[#2A2D31]">
               <h3 className="text-[#8E9299] text-sm uppercase tracking-wider mb-2">Pending Requests</h3>

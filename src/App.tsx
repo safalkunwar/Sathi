@@ -1,25 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AppProvider, useAppContext } from './context/AppContext';
+import { ToastProvider } from './components/ui/Toast';
 import { ClientApp } from './ClientApp';
 import { AdminApp } from './admin/AdminApp';
+import { AuthGuard } from './components/guards/AuthGuard';
+import { AdminGuard } from './components/guards/AdminGuard';
+import { LoadingScreen } from './components/LoadingScreen';
+import { NotificationProvider } from './components/notifications/NotificationProvider';
 
-export default function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
+function AppRoutes() {
+  const { loading } = useAppContext();
 
-  useEffect(() => {
-    const handleHashChange = () => {
-      setIsAdmin(window.location.hash === '#admin');
-    };
-    
-    // Check initial hash
-    handleHashChange();
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  if (isAdmin) {
-    return <AdminApp />;
+  if (loading) {
+    return <LoadingScreen />;
   }
 
-  return <ClientApp />;
+  return (
+    <Routes>
+      <Route path="/" element={<ClientApp />} />
+      <Route
+        path="/admin/*"
+        element={
+          <AdminGuard>
+            <AdminApp />
+          </AdminGuard>
+        }
+      />
+      <Route
+        path="/bookings"
+        element={
+          <AuthGuard>
+            <ClientApp initialTab="bookings" />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <AuthGuard>
+            <ClientApp initialTab="messages" />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <AuthGuard>
+            <ClientApp initialTab="dashboard" />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/partner"
+        element={
+          <AuthGuard>
+            <ClientApp initialTab="partner" />
+          </AuthGuard>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppProvider>
+        <ToastProvider>
+          <NotificationProvider>
+            <AppRoutes />
+          </NotificationProvider>
+        </ToastProvider>
+      </AppProvider>
+    </BrowserRouter>
+  );
 }

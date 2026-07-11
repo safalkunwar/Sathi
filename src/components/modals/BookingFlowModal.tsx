@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Calendar, Clock, MapPin, Users, Check } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, Users, Check, Map as MapIcon, Navigation, CreditCard } from 'lucide-react';
 import { Companion, Booking } from '../../types';
 import { useAppContext } from '../../context/AppContext';
+import { MapPreview, MAP_CENTER } from '../maps/MapPreview';
+import { paymentService, type PaymentProvider } from '../../services/payments';
+import { useToast } from '../ui/Toast';
 
 interface BookingFlowModalProps {
   companion: Companion;
@@ -12,6 +15,7 @@ interface BookingFlowModalProps {
 
 export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({ companion, onClose, onComplete }) => {
   const { addBooking, currentUser } = useAppContext();
+  const { showToast } = useToast();
   const [step, setStep] = useState(1);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -19,14 +23,17 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({ companion, o
   const [participants, setParticipants] = useState(1);
   const [location, setLocation] = useState('');
   const [requests, setRequests] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentProvider | ''>('');
+  const [processing, setProcessing] = useState(false);
 
   const calculateTotal = () => companion.hourlyRate * duration;
   const serviceFee = calculateTotal() * 0.1;
   const grandTotal = calculateTotal() + serviceFee;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    const bookingId = `bk-${Date.now()}`;
     const booking: Booking = {
-      id: `bk-${Date.now()}`,
+      id: bookingId,
       companionId: companion.id,
       userId: currentUser?.id || 'guest',
       date,
@@ -39,12 +46,49 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({ companion, o
       specialRequests: requests,
       createdAt: new Date().toISOString()
     };
-    addBooking(booking);
-    setStep(4); // Success step
+
+    await addBooking(booking);
+
+    if (!paymentMethod) {
+      setStep(4);
+      return;
+    }
+
+    try {
+      const requestUrl = `${window.location.origin}/bookings`;
+      const result = await paymentService.initiatePayment({
+        amount: Math.round(grandTotal),
+        currency: 'NPR',
+        provider: paymentMethod,
+        companionId: companion.id,
+        bookingId,
+        returnUrl: requestUrl,
+        webhookUrl: requestUrl,
+        customerInfo: currentUser ? {
+          name: currentUser.name,
+          email: currentUser.email,
+          phone: '',
+        } : undefined,
+      });
+
+      if (paymentMethod === 'khalti') {
+        window.location.href = result.paymentUrl;
+        return;
+      }
+
+      if (paymentMethod === 'esewa') {
+        setStep(4);
+        return;
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Payment initiation failed', 'error');
+    }
+
+    setStep(4);
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="booking-flow-title">
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose} />
       
       <motion.div 
@@ -54,10 +98,10 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({ companion, o
         className="relative w-full max-w-lg bg-[#17191C] rounded-3xl overflow-hidden shadow-2xl border border-[#2A2D31]"
       >
         <div className="p-6 border-b border-[#2A2D31] flex items-center justify-between bg-[#0F1113]">
-          <h2 className="text-xl font-bold text-white">
+          <h2 id="booking-flow-title" className="text-xl font-bold text-white">
             {step === 4 ? 'Booking Confirmed' : `Book ${companion.name}`}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#1E2124] flex items-center justify-center text-[#8E9299] hover:text-white transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#1E2124] flex items-center justify-center text-[#8E9299] hover:text-white transition-colors" aria-label="Close booking dialog">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -68,11 +112,25 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({ companion, o
               <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <h3 className="text-lg font-bold text-white mb-6">When do you want to meet?</h3>
                 
-                <div className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-[#8E9299] mb-2 flex items-center gap-2"><Calendar className="w-4 h-4" /> Date</label>
-                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-[#1E2124] border border-[#2A2D31] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#C8A25E]" />
-                  </div>
+                 <div className="space-y-5">
+                   <div>
+                     <label htmlFor="booking-date" className="block text-sm font-medium text-[#8E9299] mb-2 flex items-center gap-2"><Calendar className="w-4 h-4" /> Date</label>
+                     <input id="booking-date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-[#1E2124] border border-[#2A2D31] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#C8A25E]" />
+                   </div>
+
+                   <div>
+                     <label htmlFor="booking-time" className="block text-sm font-medium text-[#8E9299] mb-2 flex items-center gap-2"><Clock className="w-4 h-4" /> Time</label>
+                     <input id="booking-time" type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full bg-[#1E2124] border border-[#2A2D31] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#C8A25E]" />
+                   </div>
+
+                   <div>
+                     <label className="block text-sm font-medium text-[#8E9299] mb-2 flex items-center gap-2"><Clock className="w-4 h-4" /> Duration</label>
+                     <div className="flex items-center gap-4">
+                       <button onClick={() => setDuration(Math.max(1, duration - 1))} className="w-10 h-10 rounded-full bg-[#1E2124] border border-[#2A2D31] text-white flex items-center justify-center" aria-label="Decrease duration">-</button>
+                       <span className="text-xl font-bold text-white w-8 text-center">{duration} hrs</span>
+                       <button onClick={() => setDuration(duration + 1)} className="w-10 h-10 rounded-full bg-[#1E2124] border border-[#2A2D31] text-white flex items-center justify-center" aria-label="Increase duration">+</button>
+                     </div>
+                   </div>
                   
                   <div className="flex gap-4">
                     <div className="flex-1">
@@ -103,10 +161,51 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({ companion, o
                 <h3 className="text-lg font-bold text-white mb-6">Details & Location</h3>
                 
                 <div className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-[#8E9299] mb-2 flex items-center gap-2"><MapPin className="w-4 h-4" /> Meeting Point</label>
-                    <input type="text" placeholder="e.g. Starbucks, Downtown" value={location} onChange={e => setLocation(e.target.value)} className="w-full bg-[#1E2124] border border-[#2A2D31] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#C8A25E]" />
-                  </div>
+                   <div>
+                     <label htmlFor="booking-location" className="block text-sm font-medium text-[#8E9299] mb-2 flex items-center gap-2"><MapPin className="w-4 h-4" /> Meeting Point</label>
+                     <input id="booking-location" type="text" placeholder="e.g. Starbucks, Downtown" value={location} onChange={e => setLocation(e.target.value)} className="w-full bg-[#1E2124] border border-[#2A2D31] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#C8A25E]" aria-required="true" />
+                   </div>
+
+                   {location && (
+                     <div className="mt-3">
+                       <MapPreview
+                         center={MAP_CENTER}
+                         zoom={13}
+                         height="200px"
+                         markers={[
+                           {
+                             id: 'meeting-point',
+                             position: MAP_CENTER,
+                             title: location,
+                             subtitle: 'Proposed meeting point',
+                           },
+                         ]}
+                       />
+                     </div>
+                   )}
+
+                   <div>
+                     <label htmlFor="booking-requests" className="block text-sm font-medium text-[#8E9299] mb-2">Special Requests (Optional)</label>
+                     <textarea id="booking-requests" value={requests} onChange={e => setRequests(e.target.value)} placeholder="Any specific activities or preferences?" className="w-full bg-[#1E2124] border border-[#2A2D31] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#C8A25E] h-24 resize-none" />
+                   </div>
+
+                   {location && (
+                     <div className="mt-3">
+                       <MapPreview
+                         center={MAP_CENTER}
+                         zoom={13}
+                         height="200px"
+                         markers={[
+                           {
+                             id: 'meeting-point',
+                             position: MAP_CENTER,
+                             title: location,
+                             subtitle: 'Proposed meeting point',
+                           },
+                         ]}
+                       />
+                     </div>
+                   )}
 
                   <div>
                     <label className="block text-sm font-medium text-[#8E9299] mb-2 flex items-center gap-2"><Users className="w-4 h-4" /> Participants</label>
@@ -156,27 +255,57 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({ companion, o
                   
                   <div className="border-t border-[#2A2D31] pt-4 mt-4 space-y-3">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-[#8E9299]">${companion.hourlyRate} x {duration} hrs</span>
-                      <span className="text-white">${calculateTotal().toFixed(2)}</span>
+                      <span className="text-[#8E9299]">NPR {companion.hourlyRate} x {duration} hrs</span>
+                      <span className="text-white">NPR {calculateTotal().toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-[#8E9299]">Service Fee (10%)</span>
-                      <span className="text-white">${serviceFee.toFixed(2)}</span>
+                      <span className="text-white">NPR {serviceFee.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-[#2A2D31]">
                       <span className="text-white">Total</span>
-                      <span className="text-[#C8A25E]">${grandTotal.toFixed(2)}</span>
+                      <span className="text-[#C8A25E]">NPR {grandTotal.toFixed(2)}</span>
                     </div>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#C8A25E] mb-3">Select Payment Method</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={() => setPaymentMethod('khalti')}
+                      className={"p-4 border rounded-xl flex flex-col items-center justify-center gap-2 transition-all " + (paymentMethod === 'khalti' ? 'border-[#C8A25E] bg-[#C8A25E]/10' : 'border-[#2A2D31] hover:border-[#C8A25E] bg-transparent')}
+                    >
+                      <div className="font-bold text-purple-400 text-xl tracking-tight">Khalti</div>
+                      <span className="text-xs text-[#8E9299]">Digital Wallet</span>
+                    </button>
+                    <button 
+                      onClick={() => setPaymentMethod('esewa')}
+                      className={"p-4 border rounded-xl flex flex-col items-center justify-center gap-2 transition-all " + (paymentMethod === 'esewa' ? 'border-[#C8A25E] bg-[#C8A25E]/10' : 'border-[#2A2D31] hover:border-[#C8A25E] bg-transparent')}
+                    >
+                      <div className="font-bold text-green-400 text-xl tracking-tight">eSewa</div>
+                      <span className="text-xs text-[#8E9299]">Digital Wallet</span>
+                    </button>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
                   <button onClick={() => setStep(2)} className="px-6 py-4 bg-[#1E2124] text-white rounded-xl font-bold hover:bg-[#2A2D31] transition-colors">Back</button>
                   <button 
-                    onClick={handleConfirm}
-                    className="flex-1 py-4 bg-[#C8A25E] text-[#0F1113] rounded-xl font-bold hover:bg-[#B69150] transition-colors shadow-lg shadow-[#C8A25E]/20"
+                    disabled={!paymentMethod || processing}
+                    onClick={async () => {
+                      if (!paymentMethod || processing) return;
+                      setProcessing(true);
+                      try {
+                        await handleConfirm();
+                      } catch (err) {
+                        showToast(err instanceof Error ? err.message : 'Payment failed', 'error');
+                        setProcessing(false);
+                      }
+                    }}
+                    className="flex-1 py-4 bg-[#C8A25E] text-[#0F1113] rounded-xl font-bold hover:bg-[#B69150] transition-colors shadow-lg shadow-[#C8A25E]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Confirm & Pay
+                    {processing ? 'Processing...' : `Pay NPR ${grandTotal.toFixed(2)}`}
                   </button>
                 </div>
               </motion.div>

@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageSquare, Bell, Star } from 'lucide-react';
+import { firestore } from '../services/firestore';
+import { Notification } from '../types';
 
 const MOCK_FEEDBACK = [
   { id: 1, user: 'Sarah L.', type: 'feedback', message: 'The app is great, but I wish I could filter guides by language spoken directly on the map.', date: 'Today, 2:30 PM', rating: 4 },
@@ -7,13 +9,16 @@ const MOCK_FEEDBACK = [
   { id: 3, user: 'Pasang D.', type: 'guide_feedback', message: 'I need a way to block users who are unresponsive after booking.', date: 'Nov 20, 2023', rating: null },
 ];
 
-const MOCK_NOTIFICATIONS = [
-  { id: 1, title: 'System Update Completed', description: 'v1.2.4 deployed successfully.', time: '1 hour ago', read: false },
-  { id: 2, title: 'New Guide Applied', description: 'Priya Gurung applied to be a guide in Kathmandu.', time: '3 hours ago', read: false },
-  { id: 3, title: 'High Traffic Alert', description: 'Server load increased by 40% in the last hour.', time: '5 hours ago', read: true },
-];
-
 export function AdminFeedback() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = firestore.subscribe<Notification>('notifications', { orderByField: 'timestamp', orderDirection: 'desc' }, (items) => {
+      setNotifications(items);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
@@ -26,13 +31,13 @@ export function AdminFeedback() {
           {MOCK_FEEDBACK.map(item => (
             <div key={item.id} className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
                <div className="flex justify-between items-start mb-2">
-                 <div className="flex items-center gap-2">
-                   <span className="font-medium text-sm text-white">{item.user}</span>
-                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${item.type === 'bug' ? 'bg-red-500/10 text-red-500' : 'bg-[#C8A25E]/10 text-[#C8A25E]'}`}>
-                     {item.type}
-                   </span>
-                 </div>
-                 <span className="text-xs text-gray-500">{item.date}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm text-white">{item.user}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${item.type === 'bug' ? 'bg-red-500/10 text-red-500' : 'bg-[#C8A25E]/10 text-[#C8A25E]'}`}>
+                      {item.type}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-500">{item.date}</span>
                </div>
                {item.rating && (
                  <div className="flex items-center gap-1 mb-2">
@@ -55,16 +60,17 @@ export function AdminFeedback() {
       <div className="bg-[#111] border border-[#222] rounded-2xl overflow-hidden flex flex-col h-[70vh]">
         <div className="px-5 py-4 border-b border-[#222] flex justify-between items-center bg-[#1a1a1a]">
           <h3 className="font-semibold text-sm flex items-center gap-2"><Bell className="w-4 h-4 text-[#C8A25E]" /> System Notifications</h3>
-          <button className="text-xs text-gray-500 hover:text-white transition-colors">Mark all read</button>
+          <button onClick={() => notifications.forEach(n => n.id && firestore.updateDocument(`notifications/${n.id}`, { isRead: true }))} className="text-xs text-gray-500 hover:text-white transition-colors">Mark all read</button>
         </div>
         <div className="divide-y divide-[#222] overflow-y-auto">
-          {MOCK_NOTIFICATIONS.map(notification => (
-            <div key={notification.id} className={`p-5 hover:bg-[#1a1a1a] transition-colors ${!notification.read ? 'bg-[#C8A25E]/5' : ''}`}>
+          {notifications.length === 0 && <p className="text-gray-500 text-sm text-center py-8">No notifications yet.</p>}
+          {notifications.map(notification => (
+            <div key={notification.id} className={`p-5 hover:bg-[#1a1a1a] transition-colors ${!notification.isRead ? 'bg-[#C8A25E]/5' : ''}`}>
                <div className="flex justify-between items-start mb-1">
-                 <h4 className={`text-sm ${!notification.read ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>{notification.title}</h4>
-                 <span className="text-xs text-gray-500">{notification.time}</span>
+                  <h4 className={`text-sm ${!notification.isRead ? 'font-bold text-white' : 'font-medium text-gray-300'}`}>{notification.title}</h4>
+                  <span className="text-xs text-gray-500">{new Date(notification.timestamp).toLocaleString()}</span>
                </div>
-               <p className="text-sm text-gray-400">{notification.description}</p>
+               <p className="text-sm text-gray-400">{notification.message}</p>
             </div>
           ))}
         </div>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldAlert, CheckCircle2, XCircle, Search, FileText } from 'lucide-react';
-import { COMPANIONS } from '../data';
+import { firestore } from '../services/firestore';
+import { Companion } from '../types';
 
 const MOCK_PENDING_GUIDES = [
   { id: 1, name: 'Sanjay Lama', email: 'sanjay.l@example.com', location: 'Pokhara', appliedDate: '2023-11-20', status: 'pending', idUrl: '#' },
@@ -9,6 +10,14 @@ const MOCK_PENDING_GUIDES = [
 
 export function AdminGuides() {
   const [selectedGuide, setSelectedGuide] = useState<any>(null);
+  const [guides, setGuides] = useState<Companion[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = firestore.subscribe<Companion>('companions', {}, (items) => {
+      setGuides(items);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -47,14 +56,14 @@ export function AdminGuides() {
       {/* Active Guides */}
       <div className="bg-[#111] border border-[#222] rounded-2xl overflow-hidden mt-8">
         <div className="px-5 py-4 border-b border-[#222] flex justify-between items-center">
-          <h3 className="font-semibold text-sm">Active Guides</h3>
+          <h3 className="font-semibold text-sm">Active Guides ({guides.length})</h3>
         </div>
         <div className="divide-y divide-[#222]">
-          {COMPANIONS.map(guide => (
+          {guides.map(guide => (
             <div key={guide.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#222]/30 transition-colors opacity-80">
               <div>
-                <p className="text-sm font-semibold flex items-center gap-2">{guide.name} <ShieldAlert className="w-3 h-3 text-green-500" /></p>
-                <p className="text-xs text-gray-400 mt-1">{guide.location} • Verified</p>
+                <p className="text-sm font-semibold flex items-center gap-2">{guide.name} {guide.isVerified && <ShieldAlert className="w-3 h-3 text-green-500" />}</p>
+                <p className="text-xs text-gray-400 mt-1">{guide.location} • {guide.isVerified ? 'Verified' : 'Unverified'}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button className="flex items-center gap-1 px-3 py-1.5 bg-[#222] text-gray-300 border border-[#333] rounded-lg text-xs font-medium hover:text-white hover:border-[#C8A25E] transition-colors">
