@@ -4,7 +4,8 @@ import { X, MapPin, Star, ShieldCheck, Languages, CheckCircle2, Clock, Calendar,
 import { Companion } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { BookingFlowModal } from './BookingFlowModal';
-import { MapPreview, MAP_CENTER } from '../maps/MapPreview';
+import { MapPreview } from '../maps/MapPreview';
+import { MAP_CENTER } from '../../services/maps';
 
 interface CompanionProfileModalProps {
   companion: Companion | null;

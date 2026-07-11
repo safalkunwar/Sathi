@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Clock, MapPin, Users, Check, Map as MapIcon, Navigation, CreditCard } from 'lucide-react';
 import { Companion, Booking } from '../../types';
 import { useAppContext } from '../../context/AppContext';
-import { MapPreview, MAP_CENTER } from '../maps/MapPreview';
+import { MapPreview } from '../maps/MapPreview';
+import { MAP_CENTER } from '../../services/maps';
 import { paymentService, type PaymentProvider } from '../../services/payments';
 import { useToast } from '../ui/Toast';
 
