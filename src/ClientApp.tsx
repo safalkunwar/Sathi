@@ -499,9 +499,12 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
                             <span className={`text-xs px-2 py-1 rounded-full border ${booking.status === 'confirmed' ? 'bg-green-500/10 border-green-500/50 text-green-500' : booking.status === 'cancelled' ? 'bg-red-500/10 border-red-500/50 text-red-500' : 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500'}`}>
                               {booking.status}
                             </span>
-                            {isCancellable && (
-                              <button onClick={() => { updateBookingStatus(booking.id, 'cancelled'); showToast('Booking cancelled', 'info'); }} className="text-xs text-red-400 hover:text-red-300 transition-colors">Cancel Booking</button>
-                            )}
+                             {isCancellable && (
+                               <button onClick={() => { updateBookingStatus(booking.id, 'cancelled'); showToast('Booking cancelled', 'info'); }} className="text-xs text-red-400 hover:text-red-300 transition-colors">Cancel Booking</button>
+                             )}
+                             {booking.status === 'confirmed' && (
+                               <button onClick={() => { updateBookingStatus(booking.id, 'completed'); showToast('Booking marked as completed', 'success'); }} className="text-xs text-green-400 hover:text-green-300 transition-colors">Mark Complete</button>
+                             )}
                          </div>
                       </div>
                     );
