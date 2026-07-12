@@ -1,17 +1,23 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { Activity, UserCheck, CalendarDays, ShieldAlert, MessageSquare, LogOut } from 'lucide-react';
+import { Activity, UserCheck, CalendarDays, ShieldAlert, MessageSquare, LogOut, Users, Briefcase } from 'lucide-react';
 import * as motion from 'motion/react-client';
 import { firestore } from '../services/firestore';
 
 import { AdminOverview } from './AdminOverview';
+import { AdminUsers } from './AdminUsers';
 import { AdminGuides } from './AdminGuides';
+import { AdminCompanions } from './AdminCompanions';
 import { AdminBookings } from './AdminBookings';
+import { AdminContent } from './AdminContent';
 import { AdminSecurity } from './AdminSecurity';
 import { AdminFeedback } from './AdminFeedback';
+import { AdminUsers } from './AdminUsers';
+import { AdminCompanions } from './AdminCompanions';
+import { AdminContent } from './AdminContent';
 
 export function AdminApp() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'guides' | 'bookings' | 'security' | 'feedback'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'guides' | 'companions' | 'bookings' | 'content' | 'security' | 'feedback'>('overview');
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] font-sans text-white flex">
@@ -24,11 +30,20 @@ export function AdminApp() {
            <button onClick={() => setActiveTab('overview')} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'overview' ? 'bg-[#C8A25E]/10 text-[#C8A25E]' : 'text-gray-400 hover:text-white hover:bg-[#222]'}`}>
              <Activity className="w-4 h-4" /> Overview
            </button>
+           <button onClick={() => setActiveTab('users')} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'users' ? 'bg-[#C8A25E]/10 text-[#C8A25E]' : 'text-gray-400 hover:text-white hover:bg-[#222]'}`}>
+             <Users className="w-4 h-4" /> Users
+           </button>
            <button onClick={() => setActiveTab('guides')} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'guides' ? 'bg-[#C8A25E]/10 text-[#C8A25E]' : 'text-gray-400 hover:text-white hover:bg-[#222]'}`}>
              <UserCheck className="w-4 h-4" /> Guides & Verification
            </button>
+           <button onClick={() => setActiveTab('companions')} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'companions' ? 'bg-[#C8A25E]/10 text-[#C8A25E]' : 'text-gray-400 hover:text-white hover:bg-[#222]'}`}>
+             <Briefcase className="w-4 h-4" /> Companions
+           </button>
            <button onClick={() => setActiveTab('bookings')} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'bookings' ? 'bg-[#C8A25E]/10 text-[#C8A25E]' : 'text-gray-400 hover:text-white hover:bg-[#222]'}`}>
              <CalendarDays className="w-4 h-4" /> Bookings
+           </button>
+           <button onClick={() => setActiveTab('content')} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'content' ? 'bg-[#C8A25E]/10 text-[#C8A25E]' : 'text-gray-400 hover:text-white hover:bg-[#222]'}`}>
+             <Briefcase className="w-4 h-4" /> Content
            </button>
            <button onClick={() => setActiveTab('security')} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-red-500/10 text-red-500' : 'text-gray-400 hover:text-white hover:bg-[#222]'}`}>
              <ShieldAlert className="w-4 h-4" /> Security & SOS
@@ -56,39 +71,45 @@ export function AdminApp() {
             </div>
          </div>
          
-         {/* Mobile Nav Tabs */}
-         <div className="md:hidden flex overflow-x-auto bg-[#111] border-b border-[#222] hide-scrollbar">
-           {['overview', 'guides', 'bookings', 'security', 'feedback'].map((tab) => (
-             <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`px-4 py-3 text-xs font-medium whitespace-nowrap capitalize ${activeTab === tab ? 'text-[#C8A25E] border-b-2 border-[#C8A25E]' : 'text-gray-400'}`}
-             >
-                {tab}
-             </button>
-           ))}
-         </div>
+          {/* Mobile Nav Tabs */}
+          <div className="md:hidden flex overflow-x-auto bg-[#111] border-b border-[#222] hide-scrollbar">
+            {['overview', 'users', 'guides', 'companions', 'bookings', 'content', 'security', 'feedback'].map((tab) => (
+              <button
+                 key={tab}
+                 onClick={() => setActiveTab(tab as any)}
+                 className={`px-4 py-3 text-xs font-medium whitespace-nowrap capitalize ${activeTab === tab ? 'text-[#C8A25E] border-b-2 border-[#C8A25E]' : 'text-gray-400'}`}
+              >
+                 {tab}
+              </button>
+            ))}
+          </div>
 
          <div className="p-4 md:p-8 max-w-6xl mx-auto">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                  <div>
                     <h1 className="text-2xl font-bold tracking-tight text-white capitalize">{activeTab.replace('-', ' ')}</h1>
-                    <p className="text-gray-400 text-sm mt-1">
-                       {activeTab === 'overview' && 'Monitor overall platform metrics and growth.'}
-                       {activeTab === 'guides' && 'Review and approve guides on the platform.'}
-                       {activeTab === 'bookings' && 'Manage all platform transactions.'}
-                       {activeTab === 'security' && 'Monitor suspicious activities and SOS alerts.'}
-                       {activeTab === 'feedback' && 'Review user feedback and system notifications.'}
-                    </p>
+                     <p className="text-gray-400 text-sm mt-1">
+                        {activeTab === 'overview' && 'Monitor overall platform metrics and growth.'}
+                        {activeTab === 'users' && 'Manage user accounts and roles.'}
+                        {activeTab === 'guides' && 'Review and approve guides on the platform.'}
+                        {activeTab === 'companions' && 'Manage companion profiles and verifications.'}
+                        {activeTab === 'bookings' && 'Manage all platform transactions.'}
+                        {activeTab === 'content' && 'Manage activities and events.'}
+                        {activeTab === 'security' && 'Monitor suspicious activities and SOS alerts.'}
+                        {activeTab === 'feedback' && 'Review user feedback and system notifications.'}
+                     </p>
                  </div>
               </div>
 
-              {activeTab === 'overview' && <AdminOverview />}
-              {activeTab === 'guides' && <AdminGuides />}
-              {activeTab === 'bookings' && <AdminBookings />}
-              {activeTab === 'security' && <AdminSecurity />}
-              {activeTab === 'feedback' && <AdminFeedback />}
+               {activeTab === 'overview' && <AdminOverview />}
+               {activeTab === 'users' && <AdminUsers />}
+               {activeTab === 'guides' && <AdminGuides />}
+               {activeTab === 'companions' && <AdminCompanions />}
+               {activeTab === 'bookings' && <AdminBookings />}
+               {activeTab === 'content' && <AdminContent />}
+               {activeTab === 'security' && <AdminSecurity />}
+               {activeTab === 'feedback' && <AdminFeedback />}
 
             </motion.div>
          </div>
