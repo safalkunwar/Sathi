@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Send, Image as ImageIcon, Phone, Video, Info, MessageSquare, LogIn } from 'lucide-react';
+import { Search, Send, Image as ImageIcon, Phone, Video, Info, MessageSquare, LogIn, Wifi, WifiOff } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../ui/Toast';
 import { firestore } from '../../services/firestore';
@@ -15,6 +15,7 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
   const { companions: fetchedCompanions } = useCompanions();
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [localConversations, setLocalConversations] = useState<Record<string, { participantIds: string[]; lastMessage?: any; unreadCount?: number }>>({});
   const [localMessages, setLocalMessages] = useState<Record<string, any[]>>({});
   const [allMessages, setAllMessages] = useState<any[]>([]);
@@ -23,6 +24,15 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
     if (!currentUser) return [];
     return fetchedCompanions.map(c => c.id);
   }, [currentUser, fetchedCompanions]);
+
+  const filteredConversations = useMemo(() => {
+    return conversations.filter(convo => {
+      if (!searchQuery.trim()) return true;
+      const cId = convo.participantIds.find((id: string) => id !== currentUser?.id);
+      const comp = fetchedCompanions.find(c => c.id === cId);
+      return comp?.name.toLowerCase().includes(searchQuery.toLowerCase()) || convo.lastMessage?.text?.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+  }, [conversations, searchQuery, currentUser, fetchedCompanions]);
 
   const conversations = useMemo(() => {
     return Object.values(localConversations).sort((a: any, b: any) => {
@@ -130,7 +140,10 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
           <h2 className="text-xl font-bold text-white mb-4">Messages</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8E9299]" />
-            <input type="text" placeholder="Search conversations..." aria-label="Search conversations" className="w-full bg-[#1E2124] text-white border border-[#2A2D31] rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#C8A25E]" />
+            <input type="text" placeholder="Search conversations..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} aria-label="Search conversations" className="w-full bg-[#1E2124] text-white border border-[#2A2D31] rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#C8A25E]" />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8E9299] hover:text-white text-xs">Clear</button>
+            )}
           </div>
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -144,10 +157,10 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
                 </button>
               )}
             </div>
-          ) : conversations.length === 0 ? (
+          ) : filteredConversations.length === 0 ? (
             <div className="p-4 text-sm text-[#8E9299] text-center">No conversations yet.</div>
           ) : (
-            conversations.map((convo) => {
+            filteredConversations.map((convo) => {
               const cId = convo.participantIds.find((id: string) => id !== currentUser?.id);
               const comp = fetchedCompanions.find(c => c.id === cId);
               if (!comp) return null;
@@ -198,7 +211,7 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
                   <img src={companion.imageUrl} className="w-8 h-8 rounded-full object-cover" />
                   <div>
                     <h3 className="font-bold text-white text-sm">{companion.name}</h3>
-                    <span className="text-xs text-green-500">Online</span>
+                    <span className="text-xs text-green-500 flex items-center gap-1"><Wifi className="w-3 h-3" /> Online</span>
                   </div>
                 </>
               ) : (

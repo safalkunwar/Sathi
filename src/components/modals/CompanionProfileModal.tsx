@@ -174,6 +174,13 @@ export const CompanionProfileModal: React.FC<CompanionProfileModalProps> = ({ co
                           : 'Availability not specified'}
                       </span>
                     </div>
+                    {companion.availableDays && companion.availableDays.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {companion.availableDays.map(day => (
+                          <span key={day} className="px-3 py-1 bg-[#C8A25E]/10 text-[#C8A25E] border border-[#C8A25E]/20 rounded-lg text-xs font-medium">{day}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <button 
