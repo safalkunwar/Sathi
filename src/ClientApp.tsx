@@ -13,7 +13,6 @@ import { MessagesTab } from './components/messages/MessagesTab';
 import { DashboardTab } from './components/dashboard/DashboardTab';
 import { PartnerDashboard } from './components/dashboard/PartnerDashboard';
 import { SafetyWidget } from './components/SafetyWidget';
-import { COMPANIONS, STORIES } from './data';
 import { Companion, ExperienceStory } from './types';
 import { MapPin, Star, ShieldCheck, Languages, Search, Play, Clock } from 'lucide-react';
 import * as motion from 'motion/react-client';
@@ -54,8 +53,8 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
     return () => clearTimeout(timer);
   }, [showSOS]);
   
-  const companions = fetchedCompanions.length > 0 ? fetchedCompanions : COMPANIONS;
-  const stories = fetchedStories.length > 0 ? fetchedStories : STORIES;
+  const companions = fetchedCompanions;
+  const stories = fetchedStories;
 
   const filteredCompanions = companions.filter(c => 
     (c.location.toLowerCase().includes(searchQuery.toLowerCase()) ||

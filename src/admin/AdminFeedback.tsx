@@ -3,21 +3,51 @@ import { MessageSquare, Bell, Star } from 'lucide-react';
 import { firestore } from '../services/firestore';
 import { Notification } from '../types';
 
-const MOCK_FEEDBACK = [
-  { id: 1, user: 'Sarah L.', type: 'feedback', message: 'The app is great, but I wish I could filter guides by language spoken directly on the map.', date: 'Today, 2:30 PM', rating: 4 },
-  { id: 2, user: 'John Doe', type: 'bug', message: 'Payment gateway crashed when I tried to use my international card.', date: 'Yesterday, 10:15 AM', rating: null },
-  { id: 3, user: 'Pasang D.', type: 'guide_feedback', message: 'I need a way to block users who are unresponsive after booking.', date: 'Nov 20, 2023', rating: null },
-];
+interface FeedbackItem {
+  id: string;
+  user: string;
+  type: 'feedback' | 'bug' | 'guide_feedback';
+  message: string;
+  date: string;
+  rating?: number;
+  status: 'new' | 'read' | 'resolved';
+  userId: string;
+}
 
 export function AdminFeedback() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [feedbackItems, setFeedbackItems] = useState<FeedbackItem[]>([]);
 
   useEffect(() => {
-    const unsubscribe = firestore.subscribe<Notification>('notifications', { orderByField: 'timestamp', orderDirection: 'desc' }, (items) => {
+    const unsubNotifications = firestore.subscribe<Notification>('notifications', { orderByField: 'timestamp', orderDirection: 'desc' }, (items) => {
       setNotifications(items);
     });
-    return () => unsubscribe();
+
+    const unsubFeedback = firestore.subscribe<FeedbackItem>('feedback', { orderByField: 'date', orderDirection: 'desc' }, (items) => {
+      setFeedbackItems(items);
+    });
+
+    return () => {
+      unsubNotifications();
+      unsubFeedback();
+    };
   }, []);
+
+  const handleReply = async (id: string) => {
+    await firestore.updateDocument(`feedback/${id}`, { status: 'read' });
+  };
+
+  const handleResolve = async (id: string) => {
+    await firestore.updateDocument(`feedback/${id}`, { status: 'resolved' });
+  };
+
+  const handleMarkAllRead = async () => {
+    for (const n of notifications) {
+      if (n.id && !n.isRead) {
+        await firestore.updateDocument(`notifications/${n.id}`, { isRead: true });
+      }
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -28,14 +58,15 @@ export function AdminFeedback() {
           <h3 className="font-semibold text-sm flex items-center gap-2"><MessageSquare className="w-4 h-4 text-[#C8A25E]" /> User Feedback & Reports</h3>
         </div>
         <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-          {MOCK_FEEDBACK.map(item => (
+          {feedbackItems.length === 0 && <p className="text-gray-500 text-sm text-center py-8">No feedback yet.</p>}
+          {feedbackItems.map(item => (
             <div key={item.id} className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
                <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm text-white">{item.user}</span>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${item.type === 'bug' ? 'bg-red-500/10 text-red-500' : 'bg-[#C8A25E]/10 text-[#C8A25E]'}`}>
-                      {item.type}
-                    </span>
+                     <span className="font-medium text-sm text-white">{item.user}</span>
+                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${item.type === 'bug' ? 'bg-red-500/10 text-red-500' : 'bg-[#C8A25E]/10 text-[#C8A25E]'}`}>
+                       {item.type}
+                     </span>
                   </div>
                   <span className="text-xs text-gray-500">{item.date}</span>
                </div>
@@ -48,8 +79,8 @@ export function AdminFeedback() {
                )}
                <p className="text-sm text-gray-300 leading-relaxed">{item.message}</p>
                <div className="mt-3 flex gap-2">
-                 <button className="text-xs font-medium text-[#C8A25E] hover:underline">Reply</button>
-                 <button className="text-xs font-medium text-gray-500 hover:text-white transition-colors">Mark Resolved</button>
+                 <button onClick={() => handleReply(item.id)} className="text-xs font-medium text-[#C8A25E] hover:underline">Reply</button>
+                 <button onClick={() => handleResolve(item.id)} className="text-xs font-medium text-gray-500 hover:text-white transition-colors">Mark Resolved</button>
                </div>
             </div>
           ))}
@@ -60,7 +91,7 @@ export function AdminFeedback() {
       <div className="bg-[#111] border border-[#222] rounded-2xl overflow-hidden flex flex-col h-[70vh]">
         <div className="px-5 py-4 border-b border-[#222] flex justify-between items-center bg-[#1a1a1a]">
           <h3 className="font-semibold text-sm flex items-center gap-2"><Bell className="w-4 h-4 text-[#C8A25E]" /> System Notifications</h3>
-          <button onClick={() => notifications.forEach(n => n.id && firestore.updateDocument(`notifications/${n.id}`, { isRead: true }))} className="text-xs text-gray-500 hover:text-white transition-colors">Mark all read</button>
+          <button onClick={handleMarkAllRead} className="text-xs text-gray-500 hover:text-white transition-colors">Mark all read</button>
         </div>
         <div className="divide-y divide-[#222] overflow-y-auto">
           {notifications.length === 0 && <p className="text-gray-500 text-sm text-center py-8">No notifications yet.</p>}

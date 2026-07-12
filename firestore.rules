@@ -301,5 +301,53 @@ service cloud.firestore {
       // No updates or deletions from client
       allow update, delete: if false;
     }
+
+    // SOS Alerts Collection: /sosAlerts/{alertId}
+    match /sosAlerts/{alertId} {
+      // Anyone can read SOS alerts
+      allow read: if true;
+
+      // Only admins can create, update, and delete SOS alerts
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Suspicious Activity Collection: /suspiciousActivity/{activityId}
+    match /suspiciousActivity/{activityId} {
+      // Anyone can read suspicious activity logs
+      allow read: if true;
+
+      // Only admins can create, update, and delete suspicious activity logs
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Feedback Collection: /feedback/{feedbackId}
+    match /feedback/{feedbackId} {
+      // Authenticated users can create feedback
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidData(request.resource.data);
+
+      // Users can read their own feedback, admins can read all
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Users can update their own feedback (limited fields), admins can update any
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['message', 'updatedAt'])) ||
+        isAdmin()
+      );
+
+      // Only admins can delete feedback
+      allow delete: if isAdmin();
+    }
+
+    // Guide Applications Collection: /guideApplications/{applicationId}
+    match /guideApplications/{applicationId} {
+      // Companions can create their own applications
+      allow create: if isCompanion() && request.auth.uid == request.resource.data.companionId && isValidData(request.resource.data);
+
+      // Companions can read their own applications
+      allow read: if isCompanion() && request.auth.uid == resource.data.companionId;
+
+      // Only admins can read, update, and delete all applications
+      allow read, update, delete: if isAdmin();
+    }
   }
 }

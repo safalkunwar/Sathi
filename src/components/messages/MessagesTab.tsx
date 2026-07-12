@@ -3,11 +3,12 @@ import { Search, Send, Image as ImageIcon, Phone, Video, Info, MessageSquare } f
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../ui/Toast';
 import { firestore } from '../../services/firestore';
-import { COMPANIONS } from '../../data';
+import { useCompanions } from '../../hooks/useFirestoreData';
 
 export const MessagesTab: React.FC = () => {
   const { currentUser, getConversationId } = useAppContext();
   const { showToast } = useToast();
+  const { companions: fetchedCompanions } = useCompanions();
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [localConversations, setLocalConversations] = useState<Record<string, { participantIds: string[]; lastMessage?: any; unreadCount?: number }>>({});
@@ -16,12 +17,11 @@ export const MessagesTab: React.FC = () => {
 
   const companionIds = useMemo(() => {
     if (!currentUser) return [];
-    const companions = COMPANIONS.map(c => c.id);
-    return companions;
-  }, [currentUser]);
+    return fetchedCompanions.map(c => c.id);
+  }, [currentUser, fetchedCompanions]);
 
   const conversations = useMemo(() => {
-    return Object.values(localConversations).sort((a, b) => {
+    return Object.values(localConversations).sort((a: any, b: any) => {
       const aTime = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
       const bTime = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
       return bTime - aTime;
@@ -116,7 +116,7 @@ export const MessagesTab: React.FC = () => {
 
   const currentChat = conversations.find(c => c.id === selectedConvo);
   const companionId = currentChat?.participantIds.find((id: string) => id !== currentUser?.id);
-  const companion = COMPANIONS.find(c => c.id === companionId);
+  const companion = fetchedCompanions.find(c => c.id === companionId);
 
   return (
     <div className="h-[calc(100vh-160px)] md:h-[700px] flex rounded-3xl overflow-hidden border border-[#2A2D31] bg-[#0F1113]">
@@ -135,7 +135,7 @@ export const MessagesTab: React.FC = () => {
           )}
           {conversations.map((convo) => {
             const cId = convo.participantIds.find((id: string) => id !== currentUser?.id);
-            const comp = COMPANIONS.find(c => c.id === cId);
+            const comp = fetchedCompanions.find(c => c.id === cId);
             if (!comp) return null;
 
             return (

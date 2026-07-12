@@ -3,21 +3,49 @@ import { ShieldAlert, CheckCircle2, XCircle, Search, FileText } from 'lucide-rea
 import { firestore } from '../services/firestore';
 import { Companion } from '../types';
 
-const MOCK_PENDING_GUIDES = [
-  { id: 1, name: 'Sanjay Lama', email: 'sanjay.l@example.com', location: 'Pokhara', appliedDate: '2023-11-20', status: 'pending', idUrl: '#' },
-  { id: 2, name: 'Priya Gurung', email: 'priya.g@example.com', location: 'Kathmandu', appliedDate: '2023-11-22', status: 'pending', idUrl: '#' },
-];
+interface GuideApplication {
+  id: string;
+  name: string;
+  email: string;
+  location: string;
+  appliedDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+  idUrl?: string;
+  companionId?: string;
+}
 
 export function AdminGuides() {
-  const [selectedGuide, setSelectedGuide] = useState<any>(null);
+  const [selectedGuide, setSelectedGuide] = useState<GuideApplication | null>(null);
   const [guides, setGuides] = useState<Companion[]>([]);
+  const [applications, setApplications] = useState<GuideApplication[]>([]);
 
   useEffect(() => {
-    const unsubscribe = firestore.subscribe<Companion>('companions', {}, (items) => {
+    const unsubCompanions = firestore.subscribe<Companion>('companions', {}, (items) => {
       setGuides(items);
     });
-    return () => unsubscribe();
+
+    const unsubApplications = firestore.subscribe<GuideApplication>('guideApplications', { orderByField: 'appliedDate', orderDirection: 'desc' }, (items) => {
+      setApplications(items);
+    });
+
+    return () => {
+      unsubCompanions();
+      unsubApplications();
+    };
   }, []);
+
+  const handleApprove = async (app: GuideApplication) => {
+    if (app.companionId) {
+      await firestore.updateDocument(`companions/${app.companionId}`, { isVerified: true, updatedAt: new Date().toISOString() });
+    }
+    await firestore.updateDocument(`guideApplications/${app.id}`, { status: 'approved' });
+    setSelectedGuide(null);
+  };
+
+  const handleReject = async (app: GuideApplication) => {
+    await firestore.updateDocument(`guideApplications/${app.id}`, { status: 'rejected' });
+    setSelectedGuide(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -28,23 +56,24 @@ export function AdminGuides() {
         </div>
 
         <div className="divide-y divide-[#222]">
-          {MOCK_PENDING_GUIDES.map(guide => (
-            <div key={guide.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#222]/30 transition-colors">
+          {applications.length === 0 && <p className="text-gray-500 text-sm text-center py-4">No pending applications.</p>}
+          {applications.filter(a => a.status === 'pending').map(app => (
+            <div key={app.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#222]/30 transition-colors">
               <div>
-                <p className="text-sm font-semibold">{guide.name}</p>
-                <p className="text-xs text-gray-400 mt-1">{guide.email} • {guide.location}</p>
+                <p className="text-sm font-semibold">{app.name}</p>
+                <p className="text-xs text-gray-400 mt-1">{app.email} • {app.location}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => setSelectedGuide(guide)}
+                  onClick={() => setSelectedGuide(app)}
                   className="flex items-center gap-1 px-3 py-1.5 bg-[#222] text-gray-300 border border-[#333] rounded-lg text-xs font-medium hover:text-white hover:border-[#C8A25E] transition-colors"
                 >
                   <Search className="w-3 h-3" /> Review KYC
                 </button>
-                <button className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/10 transition-colors">
+                <button onClick={() => handleApprove(app)} className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/10 transition-colors">
                   <CheckCircle2 className="w-5 h-5" />
                 </button>
-                <button className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors">
+                <button onClick={() => handleReject(app)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors">
                   <XCircle className="w-5 h-5" />
                 </button>
               </div>
@@ -117,13 +146,13 @@ export function AdminGuides() {
 
               <div className="flex gap-4 pt-4">
                 <button 
-                  onClick={() => setSelectedGuide(null)}
+                  onClick={() => handleReject(selectedGuide)}
                   className="flex-1 py-3 bg-red-500/10 text-red-500 rounded-xl font-bold hover:bg-red-500/20 transition-colors uppercase tracking-wider text-sm border border-red-500/20"
                 >
                   Reject
                 </button>
                 <button 
-                  onClick={() => setSelectedGuide(null)}
+                  onClick={() => handleApprove(selectedGuide)}
                   className="flex-1 py-3 bg-[#C8A25E] text-[#0F1113] rounded-xl font-bold hover:bg-[#B69150] transition-colors uppercase tracking-wider text-sm"
                 >
                   Approve Guide

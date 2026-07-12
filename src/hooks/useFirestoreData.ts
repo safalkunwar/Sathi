@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { firestore } from '../services/firestore';
-import { COMPANIONS, STORIES } from '../data';
 import { Companion, ExperienceStory, Activity, Event } from '../types';
 import { offlineStorage } from '../services/storage';
 
 export const useCompanions = () => {
-  const [companions, setCompanions] = useState<Companion[]>(COMPANIONS);
+  const [companions, setCompanions] = useState<Companion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export const useCompanions = () => {
 };
 
 export const useStories = () => {
-  const [stories, setStories] = useState<ExperienceStory[]>(STORIES);
+  const [stories, setStories] = useState<ExperienceStory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

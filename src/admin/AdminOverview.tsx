@@ -31,10 +31,15 @@ export function AdminOverview() {
       setChartData(data);
     });
 
+    const unsubPending = firestore.subscribe('guideApplications', { where: [{ field: 'status', operator: '==', value: 'pending' }] }, (items) => {
+      setStats(prev => ({ ...prev, pending: items.length }));
+    });
+
     return () => {
       unsubUsers();
       unsubCompanions();
       unsubBookings();
+      unsubPending();
     };
   }, []);
 

@@ -385,6 +385,104 @@ const events = [
   },
 ];
 
+const guideApplications = [
+  {
+    id: 'ga1',
+    name: 'Sanjay Lama',
+    email: 'sanjay.l@example.com',
+    location: 'Pokhara',
+    appliedDate: new Date().toISOString(),
+    status: 'pending',
+    companionId: 'c10',
+    idUrl: '#',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'ga2',
+    name: 'Priya Gurung',
+    email: 'priya.g@example.com',
+    location: 'Kathmandu',
+    appliedDate: new Date(Date.now() - 86400000).toISOString(),
+    status: 'pending',
+    companionId: 'c11',
+    idUrl: '#',
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+];
+
+const sosAlerts = [
+  {
+    id: 'sos1',
+    user: 'Maria (Traveler)',
+    guide: 'Arjun Thapa',
+    location: 'Thamel, Kathmandu',
+    status: 'active',
+    priority: 'high',
+    timestamp: new Date(Date.now() - 600000).toISOString(),
+  },
+  {
+    id: 'sos2',
+    user: 'Pasang Dolma (Guide)',
+    guide: '-',
+    location: 'Patan Durbar Square',
+    status: 'resolved',
+    priority: 'medium',
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+  },
+];
+
+const suspiciousActivities = [
+  {
+    id: 'sus1',
+    flag: 'Multiple failed payments',
+    target: 'User: JohnDoe99',
+    date: new Date().toISOString(),
+    status: 'new',
+  },
+  {
+    id: 'sus2',
+    flag: 'Rapid location change anomaly',
+    target: 'Guide: Rajesh Karki',
+    date: new Date(Date.now() - 86400000).toISOString(),
+    status: 'investigating',
+  },
+];
+
+const feedback = [
+  {
+    id: 'fb1',
+    user: 'Sarah L.',
+    type: 'feedback',
+    message: 'The app is great, but I wish I could filter guides by language spoken directly on the map.',
+    date: new Date().toISOString(),
+    rating: 4,
+    status: 'new',
+    userId: 'u-demo-1',
+  },
+  {
+    id: 'fb2',
+    user: 'John Doe',
+    type: 'bug',
+    message: 'Payment gateway crashed when I tried to use my international card.',
+    date: new Date(Date.now() - 86400000).toISOString(),
+    rating: null,
+    status: 'new',
+    userId: 'u-demo-2',
+  },
+  {
+    id: 'fb3',
+    user: 'Pasang D.',
+    type: 'guide_feedback',
+    message: 'I need a way to block users who are unresponsive after booking.',
+    date: new Date(Date.now() - 172800000).toISOString(),
+    rating: null,
+    status: 'resolved',
+    userId: 'u-demo-3',
+  },
+];
+
 async function seed() {
   const companionsRef = collection(db, 'companions');
   const existing = await getDocs(companionsRef);
@@ -421,7 +519,39 @@ async function seed() {
     }
   }
 
-  console.log('Seed complete: companions, stories, activities, and events checked/written.');
+  const guideAppsRef = collection(db, 'guideApplications');
+  const existingGuideApps = await getDocs(guideAppsRef);
+  if (existingGuideApps.size === 0) {
+    for (const app of guideApplications) {
+      await setDoc(doc(db, 'guideApplications', app.id), app);
+    }
+  }
+
+  const sosAlertsRef = collection(db, 'sosAlerts');
+  const existingSOS = await getDocs(sosAlertsRef);
+  if (existingSOS.size === 0) {
+    for (const alert of sosAlerts) {
+      await setDoc(doc(db, 'sosAlerts', alert.id), alert);
+    }
+  }
+
+  const suspiciousRef = collection(db, 'suspiciousActivity');
+  const existingSuspicious = await getDocs(suspiciousRef);
+  if (existingSuspicious.size === 0) {
+    for (const activity of suspiciousActivities) {
+      await setDoc(doc(db, 'suspiciousActivity', activity.id), activity);
+    }
+  }
+
+  const feedbackRef = collection(db, 'feedback');
+  const existingFeedback = await getDocs(feedbackRef);
+  if (existingFeedback.size === 0) {
+    for (const item of feedback) {
+      await setDoc(doc(db, 'feedback', item.id), item);
+    }
+  }
+
+  console.log('Seed complete: companions, stories, activities, events, guideApplications, sosAlerts, suspiciousActivity, and feedback checked/written.');
 }
 
 seed().catch((error) => {

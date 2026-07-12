@@ -1,17 +1,18 @@
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../ui/Toast';
-import { COMPANIONS } from '../../data';
+import { useCompanions } from '../../hooks/useFirestoreData';
 import { Star, ShieldCheck, Heart, MapPin, Settings } from 'lucide-react';
 import * as motion from 'motion/react-client';
 
 export const DashboardTab: React.FC = () => {
   const { currentUser, favorites, toggleFavorite, bookings } = useAppContext();
   const { showToast } = useToast();
+  const { companions: fetchedCompanions } = useCompanions();
 
   if (!currentUser) return <div className="text-white p-8">Please log in to view dashboard</div>;
 
-  const favoriteCompanions = COMPANIONS.filter(c => favorites.includes(c.id));
+  const favoriteCompanions = fetchedCompanions.filter(c => favorites.includes(c.id));
   const myBookings = bookings.filter(b => b.userId === currentUser.id);
   const totalSpent = myBookings.reduce((sum, b) => sum + b.totalPrice, 0);
 
