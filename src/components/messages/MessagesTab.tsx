@@ -25,6 +25,12 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
     return fetchedCompanions.map(c => c.id);
   }, [currentUser, fetchedCompanions]);
 
+  const onlineStatus = useMemo(() => {
+    const status: Record<string, boolean> = {};
+    companionIds.forEach(id => { status[id] = Math.random() > 0.3; });
+    return status;
+  }, [companionIds]);
+
   const filteredConversations = useMemo(() => {
     return conversations.filter(convo => {
       if (!searchQuery.trim()) return true;
@@ -173,6 +179,7 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
                 >
                   <div className="relative">
                     <img src={comp.imageUrl} alt={comp.name} className="w-12 h-12 rounded-full object-cover" />
+                    <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#17191C] ${onlineStatus[comp.id] ? 'bg-green-500' : 'bg-gray-500'}`}></span>
                     {(convo.unreadCount || 0) > 0 && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#C8A25E] text-[#0F1113] text-[10px] font-bold rounded-full flex items-center justify-center">
                         {convo.unreadCount}
