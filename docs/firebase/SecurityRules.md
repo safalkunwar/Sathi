@@ -1,0 +1,473 @@
+# Firebase Security Rules for SATHI
+
+This document details the production-grade Firestore Security Rules and Storage Security Rules for the SATHI application, implementing Role-Based Access Control (RBAC) to ensure data integrity, prevent unauthorized access, and protect user privacy. The rules are designed to support the scalable Firestore schema outlined in `FirestoreSchema.md`.
+
+## Core Security Principles
+
+1.  **Least Privilege:** Grant only the minimum necessary permissions to users and applications.
+2.  **Never Trust the Client:** All critical data validation and sensitive operations must occur on the server-side (e.g., via Cloud Functions) or be strictly enforced by security rules.
+3.  **Authentication and Authorization:** Ensure that all requests are authenticated and that the authenticated user has the necessary authorization to perform the requested action.
+4.  **Data Validation:** Validate incoming data to ensure it conforms to the expected schema and business logic.
+5.  **Prevent Privilege Escalation:** Design rules to prevent users from gaining unauthorized access or elevated permissions.
+
+## Firestore Security Rules
+
+`rules_version = '2';`
+
+`service cloud.firestore {`
+`  match /databases/{database}/documents {`
+
+`    // Helper function to check if the user is authenticated`
+`    function isAuthenticated() {`
+`      return request.auth != null;`
+`    }`
+
+`    // Helper function to check if the user is an admin (via custom claim)`
+`    function isAdmin() {`
+`      return isAuthenticated() && request.auth.token.admin == true;`
+`    }`
+
+`    // Helper function to check if the user is a companion (via custom claim or role field)`
+`    function isCompanion() {`
+`      return isAuthenticated() && request.auth.token.role == 'companion';`
+`    }`
+
+`    // Helper function to check if the user is a customer (via custom claim or role field)`
+`    function isCustomer() {`
+`      return isAuthenticated() && request.auth.token.role == 'customer';`
+`    }`
+
+`    // Helper function to check if the requested data is valid (e.g., non-empty fields)`
+`    function isValidData(data) {`
+`      return data.keys().hasAll(['createdAt', 'updatedAt']) && data.createdAt == request.time && data.updatedAt == request.time;`
+`    }`
+
+`    // Users Collection: /users/{userId}`
+`    match /users/{userId} {`
+`      // Users can read their own profile`
+`      allow read: if isAuthenticated() && request.auth.uid == userId;`
+
+`      // Users can update their own profile, but only specific fields`
+`      allow update: if isAuthenticated() && request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'avatar', 'preferences', 'updatedAt', 'favorites']);`
+
+`      // Admins can read and write any user profile`
+`      allow read, write: if isAdmin();`
+
+`      // New user creation (handled by Auth, then profile creation here)`
+`      allow create: if isAuthenticated() && request.auth.uid == userId && isValidData(request.resource.data);`
+
+`      // Subcollection for user favorites`
+`      match /favorites/{favoriteId} {`
+`        allow read: if isAuthenticated() && request.auth.uid == userId;`
+`        allow create, delete: if isAuthenticated() && request.auth.uid == userId;`
+`      }`
+`    }`
+
+`    // Companions Collection: /companions/{companionId}`
+`    match /companions/{companionId} {`
+`      // Anyone can read companion profiles`
+`      allow read: if true;`
+
+`      // Companions can update their own profile, with specific field restrictions`
+`      allow update: if isCompanion() && request.auth.uid == companionId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'bio', 'location', 'hourlyRate', 'gender', 'languages', 'interests', 'images', 'availableDays', 'updatedAt']);`
+
+`      // Admins can create, update, and delete any companion profile`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Activities Collection: /activities/{activityId}`
+`    match /activities/{activityId} {`
+`      // Anyone can read activities`
+`      allow read: if true;`
+
+`      // Companions can create, update, and delete their own activities`
+`      allow create: if isCompanion() && request.auth.uid == request.resource.data.companionId && isValidData(request.resource.data);`
+`      allow update, delete: if isCompanion() && request.auth.uid == resource.data.companionId;`
+
+`      // Admins can create, update, and delete any activity`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Bookings Collection: /bookings/{bookingId}`
+`    match /bookings/{bookingId} {`
+`      // Users can read their own bookings`
+`      // Companions can read bookings where they are the companion`
+`      // Admins can read all bookings`
+`      allow read: if isAuthenticated() && (`
+`        request.auth.uid == resource.data.userId ||`
+`        request.auth.uid == resource.data.companionId ||`
+`        isAdmin()`
+`      );`
+
+`      // Users can create their own bookings`
+`      allow create: if isCustomer() && request.auth.uid == request.resource.data.userId && isValidData(request.resource.data);`
+
+`      // Users can update limited fields (e.g., cancellation request)`
+`      // Companions can update status (e.g., confirm, complete)`
+`      // Admins can update any field`
+`      allow update: if isAuthenticated() && (`
+`        (request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])) || // Customer can request cancellation
+`        (isCompanion() && request.auth.uid == resource.data.companionId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])) || // Companion can update status
+`        isAdmin()`
+`      );`
+
+`      // Only admins can delete bookings`
+`      allow delete: if isAdmin();`
+`    }`
+
+`    // Reviews Collection: /reviews/{reviewId}`
+`    match /reviews/{reviewId} {`
+`      // Anyone can read reviews`
+`      allow read: if true;`
+
+`      // Users can create their own reviews, linked to a booking they participated in`
+`      allow create: if isCustomer() && request.auth.uid == request.resource.data.userId && exists(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)) && isValidData(request.resource.data);`
+
+`      // Users can update their own reviews (e.g., edit comment, rating)`
+`      allow update: if isCustomer() && request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'comment', 'updatedAt']);`
+
+`      // Only admins can delete reviews`
+`      allow delete: if isAdmin();`
+`    }`
+
+`    // Conversations Collection: /conversations/{conversationId}`
+`    match /conversations/{conversationId} {`
+`      // Only participants can read and write to a conversation`
+`      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participantIds;`
+
+`      // New conversation creation: ensure participants are valid and current user is one of them`
+`      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participantIds && request.resource.data.participantIds.size() >= 2 && isValidData(request.resource.data);`
+
+`      // Messages Subcollection: /conversations/{conversationId}/messages/{messageId}`
+`      match /messages/{messageId} {`
+`        // Only participants of the parent conversation can read messages`
+`        allow read: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;`
+
+`        // Only sender can create messages within a conversation they are part of`
+`        allow create: if isAuthenticated() && request.auth.uid == request.resource.data.senderId && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds && isValidData(request.resource.data);`
+
+`        // Users can only update their own messages to mark as read (or similar limited actions)`
+`        allow update: if isAuthenticated() && request.auth.uid == resource.data.senderId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'updatedAt']);`
+
+`        // No direct deletion of messages (soft delete or retention policy via Cloud Functions)`
+`        allow delete: if false;`
+`      }`
+`    }`
+
+`    // Notifications Collection: /notifications/{notificationId}`
+`    match /notifications/{notificationId} {`
+`      // Users can read and update their own notifications`
+`      allow read, update: if isAuthenticated() && request.auth.uid == resource.data.userId;`
+
+`      // Notifications are typically created by Cloud Functions, not directly by clients`
+`      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidData(request.resource.data);`
+
+`      // Admins can delete any notification`
+`      allow delete: if isAdmin();`
+`    }`
+
+`    // Payments Collection: /payments/{paymentId}`
+`    match /payments/{paymentId} {`
+`      // Users can read their own payment records`
+`      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;`
+
+`      // Payments are created by users (client-side initiation)`
+`      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidData(request.resource.data);`
+
+`      // Only Cloud Functions or admins can update payment status (e.g., after webhook)`
+`      allow update: if isAdmin();`
+
+`      // No direct deletion of payment records`
+`      allow delete: if false;`
+`    }`
+
+`    // Community Posts Collection: /community_posts/{postId}`
+`    match /community_posts/{postId} {`
+`      // Anyone can read published posts`
+`      allow read: if resource.data.status == 'published' || isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.userId);`
+
+`      // Authenticated users can create posts`
+`      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidData(request.resource.data);`
+
+`      // Authors can update their own posts (limited fields)`
+`      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'content', 'category', 'tags', 'imageUrl', 'updatedAt', 'status']);`
+
+`      // Admins can update and delete any post`
+`      allow update, delete: if isAdmin();`
+
+`      // Comments Subcollection: /community_posts/{postId}/comments/{commentId}`
+`      match /comments/{commentId} {`
+`        // Anyone can read comments on published posts`
+`        allow read: if get(/databases/$(database)/documents/community_posts/$(postId)).data.status == 'published' || isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.userId);`
+
+`        // Authenticated users can create comments`
+`        allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidData(request.resource.data);`
+
+`        // Authors can update and delete their own comments`
+`        allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;`
+
+`        // Admins can update and delete any comment`
+`        allow update, delete: if isAdmin();`
+`      }`
+`    }`
+
+`    // Events Collection: /events/{eventId}`
+`    match /events/{eventId} {`
+`      // Anyone can read public events`
+`      allow read: if resource.data.type == 'public' || isAdmin();`
+
+`      // Admins can create, update, and delete events`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Partners Collection: /partners/{partnerId}`
+`    match /partners/{partnerId} {`
+`      // Anyone can read partner profiles`
+`      allow read: if true;`
+
+`      // Only admins can create, update, and delete partner profiles`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Hotels Collection: /hotels/{hotelId}`
+`    match /hotels/{hotelId} {`
+`      // Anyone can read hotel listings`
+`      allow read: if true;`
+
+`      // Only admins can create, update, and delete hotel listings`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Restaurants Collection: /restaurants/{restaurantId}`
+`    match /restaurants/{restaurantId} {`
+`      // Anyone can read restaurant listings`
+`      allow read: if true;`
+
+`      // Only admins can create, update, and delete restaurant listings`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Cafes Collection: /cafes/{cafeId}`
+`    match /cafes/{cafeId} {`
+`      // Anyone can read cafe listings`
+`      allow read: if true;`
+
+`      // Only admins can create, update, and delete cafe listings`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Cities Collection: /cities/{cityId}`
+`    match /cities/{cityId} {`
+`      // Anyone can read city information`
+`      allow read: if true;`
+
+`      // Only admins can create, update, and delete city information`
+`      allow create, update, delete: if isAdmin();`
+`    }`
+
+`    // Reports Collection: /reports/{reportId}`
+`    match /reports/{reportId} {`
+`      // Authenticated users can create reports for themselves`
+`      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.reporterId && isValidData(request.resource.data);`
+
+`      // Only admins can read and update reports`
+`      allow read, update: if isAdmin();`
+
+`      // No direct deletion of reports`
+`      allow delete: if false;`
+`    }`
+
+`    // Support Tickets Collection: /support_tickets/{ticketId}`
+`    match /support_tickets/{ticketId} {`
+`      // Users can create their own support tickets`
+`      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && isValidData(request.resource.data);`
+
+`      // Users can read and update their own tickets`
+`      allow read, update: if isAuthenticated() && request.auth.uid == resource.data.userId;`
+
+`      // Admins can read and update any ticket`
+`      allow read, update: if isAdmin();`
+`    }`
+
+`    // Verification Requests Collection: /verification_requests/{requestId}`
+`    match /verification_requests/{requestId} {`
+`      // Companions can create their own verification requests`
+`      allow create: if isCompanion() && request.auth.uid == request.resource.data.companionId && isValidData(request.resource.data);`
+
+`      // Companions can read their own requests`
+`      allow read: if isCompanion() && request.auth.uid == resource.data.companionId;`
+
+`      // Only admins can read and update verification requests`
+`      allow read, update: if isAdmin();`
+
+`      // No direct deletion of verification requests`
+`      allow delete: if false;`
+`    }`
+
+`    // Analytics Collection: /analytics/{analyticId}`
+`    match /analytics/{analyticId} {`
+`      // Only admins can read analytics data`
+`      allow read: if isAdmin();`
+
+`      // Only Cloud Functions or trusted servers can create analytics data`
+`      allow create: if false; // Cloud Functions will handle this`
+
+`      // No updates or deletions from client`
+`      allow update, delete: if false;`
+`    }`
+
+`  }`
+`}`
+
+## Storage Security Rules
+
+`service firebase.storage {`
+`  match /b/{bucket}/o {`
+
+`    // Helper function to check if the user is authenticated`
+`    function isAuthenticated() {`
+`      return request.auth != null;`
+`    }`
+
+`    // Helper function to check if the user is an admin (via custom claim)`
+`    function isAdmin() {`
+`      return isAuthenticated() && request.auth.token.admin == true;`
+`    }`
+
+`    // User Avatars: /users/{userId}/avatars/{fileName}`
+`    match /users/{userId}/avatars/{fileName} {`
+`      // Users can upload their own avatars`
+`      allow write: if isAuthenticated() && request.auth.uid == userId;`
+`      // Anyone can read avatars`
+`      allow read: if true;`
+`    }`
+
+`    // Companion Images: /companions/{companionId}/images/{fileName}`
+`    match /companions/{companionId}/images/{fileName} {`
+`      // Companions can upload their own images`
+`      allow write: if isAuthenticated() && request.auth.uid == companionId;`
+`      // Anyone can read companion images`
+`      allow read: if true;`
+`    }`
+
+`    // Activity Images: /activities/{activityId}/images/{fileName}`
+`    match /activities/{activityId}/images/{fileName} {`
+`      // Companions can upload images for their activities`
+`      allow write: if isAuthenticated() && request.auth.uid == resource.metadata.companionId; // Requires companionId in metadata`
+`      // Anyone can read activity images`
+`      allow read: if true;`
+`    }`
+
+`    // Message Attachments: /conversations/{conversationId}/messages/{messageId}/{fileName}`
+`    match /conversations/{conversationId}/messages/{messageId}/{fileName} {`
+`      // Only participants of the conversation can upload attachments`
+`      allow write: if isAuthenticated() && request.auth.uid in get(/databases/(default)/documents/conversations/$(conversationId)).data.participantIds;`
+`      // Only participants of the conversation can read attachments`
+`      allow read: if isAuthenticated() && request.auth.uid in get(/databases/(default)/documents/conversations/$(conversationId)).data.participantIds;`
+`    }`
+
+`    // Verification Documents: /verification_requests/{requestId}/{fileName}`
+`    match /verification_requests/{requestId}/{fileName} {`
+`      // Only the companion making the request can upload documents`
+`      allow write: if isAuthenticated() && request.auth.uid == resource.metadata.companionId; // Requires companionId in metadata`
+`      // Only admins can read verification documents`
+`      allow read: if isAdmin();`
+`    }`
+
+`    // General Admin Access for other files (e.g., partner logos, event images)`
+`    match /{allPaths=**} {`
+`      allow read, write: if isAdmin();`
+`    }`
+
+`  }`
+`}`
+
+## Custom Claims for RBAC
+
+To implement the `isAdmin()` and `isCompanion()` helper functions effectively, custom claims will be set on Firebase Authentication user tokens via Cloud Functions. When a user's role changes (e.g., a user becomes a companion or an admin), a Cloud Function will be triggered to update their custom claims. This ensures that security rules can quickly and efficiently determine a user's role without additional Firestore lookups.
+
+Example Cloud Function (conceptual):
+
+```typescript
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+
+admin.initializeApp();
+
+export const setUserRole = functions.https.onCall(async (data, context) => {
+  if (!context.auth || !context.auth.token.admin) {
+    throw new functions.https.HttpsError('permission-denied', 'Only admins can set user roles.');
+  }
+
+  const uid = data.uid;
+  const role = data.role; // 'customer', 'companion', 'admin'
+
+  if (!uid || !role) {
+    throw new functions.https.HttpsError('invalid-argument', 'UID and role are required.');
+  }
+
+  try {
+    await admin.auth().setCustomUserClaims(uid, { role: role });
+    return { message: `Custom claim 'role' set to '${role}' for user ${uid}` };
+  } catch (error) {
+    throw new functions.https.HttpsError('internal', 'Failed to set custom user claim.', error);
+  }
+});
+
+// Example: Trigger when a user is marked as a companion in Firestore
+export const onCompanionCreated = functions.firestore
+  .document('companions/{companionId}')
+  .onCreate(async (snap, context) => {
+    const companionData = snap.data();
+    const userId = companionData.userId;
+    if (userId) {
+      await admin.auth().setCustomUserClaims(userId, { role: 'companion' });
+      console.log(`User ${userId} custom claim updated to companion.`);
+    }
+  });
+
+// Similarly for admin roles or when a user's role changes.
+```
+
+## Index Recommendations
+
+To support the security rules and efficient querying, the following composite indexes are recommended in addition to the single-field indexes mentioned in `FirestoreSchema.md`:
+
+*   **`users` collection:**
+    *   `role, createdAt (desc)`
+*   **`companions` collection:**
+    *   `location, rating (desc)`
+    *   `location, hourlyRate (asc)`
+    *   `languages (array-contains), rating (desc)`
+*   **`activities` collection:**
+    *   `category, price (asc)`
+    *   `companionId, category`
+*   **`bookings` collection:**
+    *   `userId, status, date (desc)`
+    *   `companionId, status, date (desc)`
+*   **`reviews` collection:**
+    *   `companionId, rating (desc)`
+    *   `companionId, createdAt (desc)`
+    *   `activityId, rating (desc)`
+*   **`conversations` collection:**
+    *   `participantIds (array-contains), updatedAt (desc)`
+*   **`notifications` collection:**
+    *   `userId, isRead, timestamp (desc)`
+*   **`payments` collection:**
+    *   `userId, status, createdAt (desc)`
+*   **`community_posts` collection:**
+    *   `status, createdAt (desc)`
+    *   `category, createdAt (desc)`
+*   **`events` collection:**
+    *   `type, date (asc)`
+*   **`reports` collection:**
+    *   `status, createdAt (desc)`
+*   **`support_tickets` collection:**
+    *   `userId, status, createdAt (desc)`
+    *   `assignedTo, status, createdAt (desc)`
+*   **`verification_requests` collection:**
+    *   `status, createdAt (desc)`
+*   **`analytics` collection:**
+    *   `eventType, timestamp (desc)`
+
+These rules and indexing strategies provide a robust and secure foundation for the SATHI application, ensuring that data access is properly controlled and queries are performed efficiently. Regular review and testing of these rules are essential as the application evolves.
