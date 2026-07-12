@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../ui/Toast';
 import { useCompanions } from '../../hooks/useFirestoreData';
-import { Star, ShieldCheck, Heart, MapPin, Settings } from 'lucide-react';
+import { Star, ShieldCheck, Heart, MapPin, Settings, Calendar } from 'lucide-react';
 import * as motion from 'motion/react-client';
 
 export const DashboardTab: React.FC = () => {
@@ -62,6 +62,43 @@ export const DashboardTab: React.FC = () => {
               <h3 className="text-[#8E9299] text-sm uppercase tracking-wider mb-2">Upcoming Trips</h3>
               <p className="text-3xl font-bold text-white">{myBookings.filter(b => b.status === 'confirmed').length}</p>
             </div>
+          </div>
+
+          {/* Recent Bookings */}
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">Recent Bookings</h2>
+            {myBookings.length > 0 ? (
+              <div className="space-y-4">
+                {myBookings.slice(0, 3).map(booking => {
+                  const companion = favoriteCompanions.find(c => c.id === booking.companionId) || fetchedCompanions.find(c => c.id === booking.companionId);
+                  return (
+                    <div key={booking.id} className="bg-[#17191C] border border-[#2A2D31] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        {companion && (
+                          <img src={companion.imageUrl} alt={companion.name} className="w-12 h-12 rounded-full object-cover border border-[#2A2D31]" />
+                        )}
+                        <div>
+                          <h3 className="font-bold text-white mb-1">Booking with {companion?.name || 'Companion'}</h3>
+                          <p className="text-sm text-[#8E9299] flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {booking.date} at {booking.time}</p>
+                          <p className="text-xs text-[#8E9299]">{booking.duration} hour(s) x {booking.participants} people</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="block font-bold text-[#C8A25E]">NPR {booking.totalPrice.toFixed(2)}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full border ${booking.status === 'confirmed' ? 'bg-green-500/10 border-green-500/50 text-green-500' : booking.status === 'cancelled' ? 'bg-red-500/10 border-red-500/50 text-red-500' : 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500'}`}>
+                          {booking.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-[#17191C] border border-[#2A2D31] rounded-2xl p-8 text-center text-[#8E9299]">
+                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                <p>No bookings yet. Explore companions to book your first experience!</p>
+              </div>
+            )}
           </div>
 
           {/* Favorites List */}

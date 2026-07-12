@@ -518,11 +518,11 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
            </motion.div>
         )}
 
-        {activeTab === 'messages' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-             <MessagesTab />
-          </motion.div>
-        )}
+         {activeTab === 'messages' && (
+           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+              <MessagesTab onOpenAuth={setAuthMode} />
+           </motion.div>
+         )}
 
         {activeTab === 'about' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-3xl mx-auto">

@@ -18,8 +18,8 @@ export const useCompanions = () => {
     loadFromCache();
 
     const unsubscribe = firestore.subscribe<Companion>('companions', {}, async (items) => {
+      setCompanions(items);
       if (items.length > 0) {
-        setCompanions(items);
         await offlineStorage.cacheCollection('companions', items);
       }
       setLoading(false);
@@ -45,8 +45,8 @@ export const useStories = () => {
     loadFromCache();
 
     const unsubscribe = firestore.subscribe<ExperienceStory>('stories', {}, async (items) => {
+      setStories(items);
       if (items.length > 0) {
-        setStories(items);
         await offlineStorage.cacheCollection('stories', items);
       }
       setLoading(false);

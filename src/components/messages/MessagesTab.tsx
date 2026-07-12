@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Send, Image as ImageIcon, Phone, Video, Info, MessageSquare } from 'lucide-react';
+import { Search, Send, Image as ImageIcon, Phone, Video, Info, MessageSquare, LogIn } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../ui/Toast';
 import { firestore } from '../../services/firestore';
 import { useCompanions } from '../../hooks/useFirestoreData';
 
-export const MessagesTab: React.FC = () => {
+interface MessagesTabProps {
+  onOpenAuth?: (mode: 'login' | 'signup' | 'guide') => void;
+}
+
+export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
   const { currentUser, getConversationId } = useAppContext();
   const { showToast } = useToast();
   const { companions: fetchedCompanions } = useCompanions();
@@ -131,7 +135,15 @@ export const MessagesTab: React.FC = () => {
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {!currentUser ? (
-            <div className="p-4 text-sm text-[#8E9299] text-center">Log in to view messages.</div>
+            <div className="p-4 flex flex-col items-center justify-center h-full text-center">
+              <MessageSquare className="w-12 h-12 text-[#8E9299] mb-3 opacity-30" />
+              <p className="text-sm text-[#8E9299] mb-4">Log in to view messages.</p>
+              {onOpenAuth && (
+                <button onClick={() => onOpenAuth('login')} className="px-4 py-2 bg-[#C8A25E] text-[#0F1113] rounded-lg text-sm font-medium hover:bg-[#B69150] transition-colors flex items-center gap-2">
+                  <LogIn className="w-4 h-4" /> Log In
+                </button>
+              )}
+            </div>
           ) : conversations.length === 0 ? (
             <div className="p-4 text-sm text-[#8E9299] text-center">No conversations yet.</div>
           ) : (
