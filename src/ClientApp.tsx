@@ -42,6 +42,7 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'recommended' | 'priceAsc' | 'priceDesc' | 'rating'>('recommended');
   const [showSOS, setShowSOS] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState<Companion[]>([]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -55,6 +56,14 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
   
   const companions = fetchedCompanions;
   const stories = fetchedStories;
+
+  const handleViewCompanion = (companion: Companion) => {
+    setSelectedCompanion(companion);
+    setRecentlyViewed(prev => {
+      const filtered = prev.filter(c => c.id !== companion.id);
+      return [companion, ...filtered].slice(0, 6);
+    });
+  };
 
   const filteredCompanions = companions.filter(c => 
     (c.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,9 +158,30 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
                     </motion.div>
                  ))}
               </div>
-            </div>
+             </div>
 
-            {/* Visual Hero / Search block */}
+             {recentlyViewed.length > 0 && (
+               <div className="mb-8">
+                 <h2 className="text-sm uppercase tracking-[0.2em] font-bold text-[#8E9299] mb-4">Recently Viewed</h2>
+                 <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 snap-x snap-mandatory">
+                   {recentlyViewed.map(companion => (
+                     <motion.div
+                       key={companion.id}
+                       whileHover={{ scale: 1.05 }}
+                       onClick={() => handleViewCompanion(companion)}
+                       className="shrink-0 w-[72px] flex flex-col items-center gap-1.5 cursor-pointer group snap-start"
+                     >
+                       <div className="w-14 h-14 md:w-16 md:h-16 rounded-full p-[2px] bg-gradient-to-tr from-[#C8A25E] via-yellow-500 to-[#B69150]">
+                         <img src={companion.imageUrl} alt={companion.name} className="w-full h-full rounded-full border-2 border-[#17191C] object-cover group-hover:scale-95 transition-transform" />
+                       </div>
+                       <span className="text-[11px] md:text-xs text-white truncate w-full text-center">{companion.name}</span>
+                     </motion.div>
+                   ))}
+                 </div>
+               </div>
+             )}
+
+             {/* Visual Hero / Search block */}
             <div className="relative rounded-3xl overflow-hidden h-[240px] md:h-[400px] mb-6 md:mb-12 border border-[#2A2D31] group">
                <img src="https://images.unsplash.com/photo-1511216335778-7cb8f49fa7a3?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                <div className="absolute inset-0 bg-gradient-to-t from-[#0F1113] via-[#0F1113]/40 to-transparent flex flex-col justify-end p-6 md:p-10">
