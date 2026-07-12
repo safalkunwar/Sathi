@@ -1,5 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+describe('firestore service', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('getDocuments returns empty array when db is missing', async () => {
+    vi.doMock('../firebase', () => ({ db: null }));
+    const { firestore } = await import('../services/firestore');
+    const result = await firestore.getDocuments('users');
+    expect(result).toEqual([]);
+  });
+
+  it('subscribe calls callback with empty array when db is missing', async () => {
+    vi.doMock('../firebase', () => ({ db: null }));
+    const { firestore } = await import('../services/firestore');
+    const callback = vi.fn();
+    const unsubscribe = firestore.subscribe('users', {}, callback);
+    expect(callback).toHaveBeenCalledWith([]);
+    expect(typeof unsubscribe).toBe('function');
+  });
+
+  it('subscribeDocument calls callback with null when db is missing', async () => {
+    vi.doMock('../firebase', () => ({ db: null }));
+    const { firestore } = await import('../services/firestore');
+    const callback = vi.fn();
+    const unsubscribe = firestore.subscribeDocument('users/u1', callback);
+    expect(callback).toHaveBeenCalledWith(null);
+    expect(typeof unsubscribe).toBe('function');
+  });
+});
+
 describe('payment service', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -130,5 +161,21 @@ describe('auth service', () => {
     const { getConversationId } = await import('../context/AppContext');
     expect(getConversationId('u1', 'c1')).toBe('c1_u1');
     expect(getConversationId('c1', 'u1')).toBe('c1_u1');
+  });
+
+  it('toAuthUser maps Firebase user fields', async () => {
+    const { authService } = await import('../services/auth');
+    const mapped = (authService as any).toAuthUser({
+      uid: 'u1',
+      email: 'test@example.com',
+      displayName: 'Test User',
+      photoURL: 'https://example.com/avatar.png',
+      emailVerified: true,
+    });
+    expect(mapped.uid).toBe('u1');
+    expect(mapped.email).toBe('test@example.com');
+    expect(mapped.displayName).toBe('Test User');
+    expect(mapped.photoURL).toBe('https://example.com/avatar.png');
+    expect(mapped.emailVerified).toBe(true);
   });
 });
