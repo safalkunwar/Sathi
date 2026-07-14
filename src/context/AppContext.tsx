@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { User, Companion, Booking, Message, Notification } from '../types';
+import { User, Companion, Booking, Message, Notification, ExperienceStory } from '../types';
 import { authService, AuthUser } from '../services/auth';
 import { firestore } from '../services/firestore';
 import { offlineStorage } from '../services/storage';
@@ -7,6 +7,8 @@ import { offlineStorage } from '../services/storage';
 interface AppState {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
+  updateUserProfile: (updates: Partial<Pick<User, 'name' | 'avatar' | 'bio' | 'location' | 'phone'>>) => Promise<void>;
+  postStory: (story: Omit<ExperienceStory, 'id'>) => Promise<void>;
   favorites: string[];
   toggleFavorite: (companionId: string) => void;
   bookings: Booking[];
@@ -56,7 +58,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const profile = await firestore.getDocument<User>(`users/${user.id}`);
           console.log('[SATHI] Firestore user profile:', profile ? 'found' : 'not found');
           if (profile && !cancelled) {
-            setCurrentUser({ ...user, role: profile.role || 'customer', favorites: profile.favorites || [] });
+            setCurrentUser({
+              ...user,
+              role: profile.role || 'customer',
+              favorites: profile.favorites || [],
+              bio: profile.bio,
+              location: profile.location,
+              phone: profile.phone,
+            });
           } else if (!cancelled) {
             await firestore.setDocument(`users/${user.id}`, {
               name: user.name,
@@ -64,6 +73,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               avatar: user.avatar,
               role: 'customer',
               favorites: [],
+              bio: '',
+              location: '',
+              phone: '',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             });
@@ -191,6 +203,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await firestore.updateDocument(`notifications/${id}`, { isRead: true });
   }, []);
 
+  const updateUserProfile = useCallback(async (updates: Partial<Pick<User, 'name' | 'avatar' | 'bio' | 'location' | 'phone'>>) => {
+    if (!currentUser) return;
+    const payload: Record<string, unknown> = { ...updates, updatedAt: new Date().toISOString() };
+    await firestore.setDocument(`users/${currentUser.id}`, payload, true);
+
+    if (updates.name !== undefined || updates.avatar !== undefined) {
+      try {
+        await authService.updateProfile(
+          updates.name !== undefined ? updates.name : currentUser.name,
+          updates.avatar !== undefined ? updates.avatar : currentUser.avatar
+        );
+      } catch (err) {
+        console.error('[SATHI] Failed to update auth profile:', err);
+      }
+    }
+
+    setCurrentUser(prev => prev ? { ...prev, ...updates } : prev);
+  }, [currentUser]);
+
+  const postStory = useCallback(async (story: Omit<ExperienceStory, 'id'>) => {
+    const id = `story-${Date.now()}`;
+    await firestore.setDocument(`stories/${id}`, {
+      ...story,
+      id,
+      createdAt: new Date().toISOString(),
+    });
+  }, []);
+
   const getConversationWith = useCallback((otherUserId: string): string => {
     if (!currentUser) return '';
     return getConversationId(currentUser.id, otherUserId);
@@ -200,6 +240,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider value={{
       currentUser,
       setCurrentUser,
+      updateUserProfile,
+      postStory,
       favorites,
       toggleFavorite,
       bookings,

@@ -6,14 +6,24 @@ import { Star, ShieldCheck, Heart, MapPin, Settings, Calendar, X, Bell } from 'l
 import * as motion from 'motion/react-client';
 
 export const DashboardTab: React.FC = () => {
-  const { currentUser, favorites, toggleFavorite, bookings, setCurrentUser, notifications } = useAppContext();
+  const { currentUser, favorites, toggleFavorite, bookings, updateUserProfile, notifications } = useAppContext();
   const { showToast } = useToast();
   const { companions: fetchedCompanions } = useCompanions();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser?.name || '');
-  const [editEmail, setEditEmail] = useState(currentUser?.email || '');
+  const [editAvatar, setEditAvatar] = useState(currentUser?.avatar || '');
+  const [editBio, setEditBio] = useState(currentUser?.bio || '');
+  const [editLocation, setEditLocation] = useState(currentUser?.location || '');
 
   if (!currentUser) return <div className="text-white p-8">Please log in to view dashboard</div>;
+
+  const startEditing = () => {
+    setEditName(currentUser.name);
+    setEditAvatar(currentUser.avatar);
+    setEditBio(currentUser.bio || '');
+    setEditLocation(currentUser.location || '');
+    setIsEditing(true);
+  };
 
   const favoriteCompanions = fetchedCompanions.filter(c => favorites.includes(c.id));
   const myBookings = bookings.filter(b => b.userId === currentUser.id);
@@ -49,14 +59,30 @@ export const DashboardTab: React.FC = () => {
               <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm" />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Email</label>
-              <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm" />
+              <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Avatar URL</label>
+              <input type="url" value={editAvatar} onChange={(e) => setEditAvatar(e.target.value)} className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm" placeholder="https://..." />
             </div>
-            <button onClick={() => { setCurrentUser({ ...currentUser!, name: editName, email: editEmail, avatar: currentUser!.avatar }); setIsEditing(false); showToast('Profile updated', 'success'); }} className="px-4 py-2 bg-[#C8A25E] text-[#0F1113] rounded-xl text-sm font-bold hover:bg-[#B69150] transition-colors">Save Changes</button>
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Location</label>
+              <input type="text" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm" placeholder="Kathmandu" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.2em] text-[#8E9299] font-bold block mb-2">Bio</label>
+              <textarea rows={3} value={editBio} onChange={(e) => setEditBio(e.target.value)} className="w-full px-4 py-2 bg-[#1E2124] border border-[#2A2D31] rounded-xl text-white outline-none focus:border-[#C8A25E] text-sm resize-none" placeholder="Tell us about yourself..." />
+            </div>
+            <button onClick={async () => {
+              try {
+                await updateUserProfile({ name: editName, avatar: editAvatar, location: editLocation, bio: editBio });
+                setIsEditing(false);
+                showToast('Profile updated', 'success');
+              } catch (err) {
+                showToast('Failed to update profile', 'error');
+              }
+            }} className="px-4 py-2 bg-[#C8A25E] text-[#0F1113] rounded-xl text-sm font-bold hover:bg-[#B69150] transition-colors">Save Changes</button>
           </div>
         ) : (
           <button 
-            onClick={() => setIsEditing(true)}
+            onClick={startEditing}
             className="relative z-10 px-6 py-3 bg-[#1E2124] text-white border border-[#2A2D31] rounded-xl hover:border-[#C8A25E] transition-colors flex items-center gap-2 font-medium"
           >
             <Settings className="w-4 h-4" /> Edit Profile

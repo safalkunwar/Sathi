@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import React from 'react';
 import { Navbar } from './components/Navbar';
 import { CompanionProfileModal } from './components/modals/CompanionProfileModal';
+import { StoryModal } from './components/modals/StoryModal';
 import { AuthModal } from './components/AuthModal';
 import { MessagesTab } from './components/messages/MessagesTab';
 import { DashboardTab } from './components/dashboard/DashboardTab';
@@ -37,6 +38,7 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingStory, setViewingStory] = useState<ExperienceStory | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'guide' | null>(null);
+  const [showStoryModal, setShowStoryModal] = useState(false);
   const [isGuide, setIsGuide] = useState(false);
   const [showGuideSetup, setShowGuideSetup] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -135,14 +137,14 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
             <div className="mb-5 md:mb-8 pt-2 md:pt-0">
               <h2 className="text-sm uppercase tracking-[0.2em] font-bold text-[#8E9299] mb-4 hidden md:block">Recent Adventures</h2>
               <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 snap-x snap-mandatory">
-                 {/* Current user add story mockup */}
-                 <div onClick={() => showToast('Story creation feature coming soon!', 'info')} className="shrink-0 w-[72px] flex flex-col items-center gap-1.5 cursor-pointer group snap-start">
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full p-[2px] bg-[#2A2D31] relative">
-                       <img src={currentUser?.avatar || "https://ui-avatars.com/api/?name=User&background=random"} alt="Your Story" className="w-full h-full rounded-full border-2 border-[#1E2124] object-cover" />
-                       <div className="absolute bottom-0 right-0 bg-[#C8A25E] text-[#0F1113] w-5 h-5 rounded-full flex items-center justify-center font-bold text-lg leading-none border-2 border-[#1E2124]">+</div>
-                    </div>
-                    <span className="text-[11px] md:text-xs text-[#8E9299] truncate w-full text-center">Share Moment</span>
-                 </div>
+                  {/* Current user add story mockup */}
+                  <div onClick={() => { if (currentUser) setShowStoryModal(true); else setAuthMode('login'); }} className="shrink-0 w-[72px] flex flex-col items-center gap-1.5 cursor-pointer group snap-start">
+                     <div className="w-14 h-14 md:w-16 md:h-16 rounded-full p-[2px] bg-[#2A2D31] relative">
+                        <img src={currentUser?.avatar || "https://ui-avatars.com/api/?name=User&background=random"} alt="Your Story" className="w-full h-full rounded-full border-2 border-[#1E2124] object-cover" />
+                        <div className="absolute bottom-0 right-0 bg-[#C8A25E] text-[#0F1113] w-5 h-5 rounded-full flex items-center justify-center font-bold text-lg leading-none border-2 border-[#1E2124]">+</div>
+                     </div>
+                     <span className="text-[11px] md:text-xs text-[#8E9299] truncate w-full text-center">Share Moment</span>
+                  </div>
                  
                  {stories.map((story) => (
                     <motion.div 
@@ -641,6 +643,11 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
              }
           }}
         />
+      )}
+
+      {/* Story Modal */}
+      {showStoryModal && (
+        <StoryModal onClose={() => setShowStoryModal(false)} />
       )}
 
       {/* Safety / Verification Widget Mockup */}

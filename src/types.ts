@@ -6,6 +6,9 @@ export interface User {
   role: 'guest' | 'customer' | 'companion' | 'admin';
   favorites: string[]; // Companion IDs
   claims?: Record<string, unknown>;
+  bio?: string;
+  location?: string;
+  phone?: string;
 }
 
 export interface Review {

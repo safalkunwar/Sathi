@@ -31,6 +31,14 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
     return status;
   }, [companionIds]);
 
+  const conversations = useMemo(() => {
+    return Object.values(localConversations).sort((a: any, b: any) => {
+      const aTime = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
+      const bTime = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [localConversations]);
+
   const filteredConversations = useMemo(() => {
     return conversations.filter(convo => {
       if (!searchQuery.trim()) return true;
@@ -39,14 +47,6 @@ export const MessagesTab: React.FC<MessagesTabProps> = ({ onOpenAuth }) => {
       return comp?.name.toLowerCase().includes(searchQuery.toLowerCase()) || convo.lastMessage?.text?.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [conversations, searchQuery, currentUser, fetchedCompanions]);
-
-  const conversations = useMemo(() => {
-    return Object.values(localConversations).sort((a: any, b: any) => {
-      const aTime = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
-      const bTime = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
-      return bTime - aTime;
-    });
-  }, [localConversations]);
 
   const messages = useMemo(() => {
     if (!selectedConvo) return [];

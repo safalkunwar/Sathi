@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User, LogIn, UserCircle, Briefcase, Settings, LogOut, Menu, X, Sun, Moon, LayoutDashboard, Search, Bell } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from './ui/Toast';
+import { authService } from '../services/auth';
 
 interface NavbarProps {
   activeTab: 'explore' | 'bookings' | 'messages' | 'about' | 'admin' | 'dashboard' | 'partner';
@@ -47,9 +48,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenA
     }
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setIsDropdownOpen(false);
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error('[SATHI] Logout failed:', err);
+    } finally {
+      setCurrentUser(null);
+      setIsDropdownOpen(false);
+    }
   };
 
   return (
