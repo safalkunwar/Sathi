@@ -422,17 +422,13 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
                  ) : filteredStories.length === 0 ? (
                    <div className="text-center py-12 text-[#8E9299]">No moments yet. Be the first to share!</div>
                  ) : (
-                   filteredStories.map((story) => {
-                     const companion = companions.find(c => c.id === story.companionId);
-                     return (
-                       <StoryCard
-                         key={story.id}
-                         story={story}
-                         companion={companion}
-                         onViewStory={setViewingStory}
-                       />
-                     );
-                   })
+                    filteredStories.map((story) => (
+                      <StoryCard
+                        key={story.id}
+                        story={story}
+                        onViewStory={setViewingStory}
+                      />
+                    ))
                  )}
                </div>
              </div>
