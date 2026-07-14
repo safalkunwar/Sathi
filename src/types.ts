@@ -19,12 +19,14 @@ export interface Review {
 
 export interface ExperienceStory {
   id: string;
+  companionId?: string;
   companionName: string;
   userName: string;
-  userAvatar: string;
+  userAvatar?: string;
   imageUrl: string;
   timeAgo: string;
   caption: string;
+  userId?: string;
   likes?: number;
   comments?: number;
 }
@@ -47,6 +49,12 @@ export interface Companion {
   images?: string[];
   reviews?: Review[];
   availableDays?: string[]; // e.g. ['Monday', 'Tuesday']
+  responseRate?: number;
+  responseTime?: string;
+  completedBookings?: number;
+  trustScore?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Booking {
@@ -83,11 +91,15 @@ export interface Conversation {
 export interface Activity {
   id: string;
   title: string;
+  description?: string;
   imageUrl?: string;
   image?: string;
   duration: string;
   avgPrice: number;
   companionCount: number;
+  category?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Event {
@@ -95,9 +107,14 @@ export interface Event {
   date: string;
   time: string;
   title: string;
+  description?: string;
   location: string;
   spots: number;
   participants?: number | { length: number };
+  coordinates?: { latitude: number; longitude: number };
+  imageUrl?: string;
+  createdBy?: string;
+  createdAt?: string;
 }
 
 export interface Notification {

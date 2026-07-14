@@ -2,107 +2,61 @@ import { useState, useEffect } from 'react';
 import { firestore } from '../services/firestore';
 import { Companion, ExperienceStory, Activity, Event } from '../types';
 import { offlineStorage } from '../services/storage';
+import { COMPANIONS, STORIES, ACTIVITIES, EVENTS } from '../data/seedData';
 
-export const useCompanions = () => {
-  const [companions, setCompanions] = useState<Companion[]>([]);
+const useCollection = <T extends { id: string }>(
+  store: 'companions' | 'stories' | 'activities' | 'events',
+  fallback: T[]
+) => {
+  const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadFromCache = async () => {
-      const cached = await offlineStorage.getCachedCollection<Companion>('companions');
+      const cached = await offlineStorage.getCachedCollection<T>(store);
       if (cached.length > 0) {
-        setCompanions(cached);
+        setItems(cached);
       }
     };
 
     loadFromCache();
 
-    const unsubscribe = firestore.subscribe<Companion>('companions', {}, async (items) => {
-      setCompanions(items);
-      if (items.length > 0) {
-        await offlineStorage.cacheCollection('companions', items);
+    const unsubscribe = firestore.subscribe<T>(store, {}, async (live) => {
+      if (live.length > 0) {
+        setItems(live);
+        await offlineStorage.cacheCollection(store, live);
+      } else {
+        const cached = await offlineStorage.getCachedCollection<T>(store);
+        const source = cached.length ? cached : fallback;
+        setItems(source);
+        if (!cached.length) {
+          await offlineStorage.cacheCollection(store, source);
+        }
       }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [store]);
 
-  return { companions, loading };
+  return { [store]: items, loading } as Record<string, unknown> & { loading: boolean };
+};
+
+export const useCompanions = () => {
+  const result = useCollection<Companion>('companions', COMPANIONS);
+  return { companions: result.companions as Companion[], loading: result.loading };
 };
 
 export const useStories = () => {
-  const [stories, setStories] = useState<ExperienceStory[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFromCache = async () => {
-      const cached = await offlineStorage.getCachedCollection<ExperienceStory>('stories');
-      if (cached.length > 0) {
-        setStories(cached);
-      }
-    };
-
-    loadFromCache();
-
-    const unsubscribe = firestore.subscribe<ExperienceStory>('stories', {}, async (items) => {
-      setStories(items);
-      if (items.length > 0) {
-        await offlineStorage.cacheCollection('stories', items);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  return { stories, loading };
+  const result = useCollection<ExperienceStory>('stories', STORIES);
+  return { stories: result.stories as ExperienceStory[], loading: result.loading };
 };
 
 export const useActivities = () => {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFromCache = async () => {
-      const cached = await offlineStorage.getCachedCollection<Activity>('activities');
-      if (cached.length > 0) {
-        setActivities(cached);
-      }
-    };
-
-    loadFromCache();
-
-    const unsubscribe = firestore.subscribe<Activity>('activities', {}, async (items) => {
-      setActivities(items);
-      await offlineStorage.cacheCollection('activities', items);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  return { activities, loading };
+  const result = useCollection<Activity>('activities', ACTIVITIES);
+  return { activities: result.activities as Activity[], loading: result.loading };
 };
 
 export const useEvents = () => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFromCache = async () => {
-      const cached = await offlineStorage.getCachedCollection<Event>('events');
-      if (cached.length > 0) {
-        setEvents(cached);
-      }
-    };
-
-    loadFromCache();
-
-    const unsubscribe = firestore.subscribe<Event>('events', {}, async (items) => {
-      setEvents(items);
-      await offlineStorage.cacheCollection('events', items);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  return { events, loading };
+  const result = useCollection<Event>('events', EVENTS);
+  return { events: result.events as Event[], loading: result.loading };
 };

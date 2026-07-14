@@ -1,26 +1,6 @@
-import 'dotenv/config';
-import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, type Auth } from 'firebase/auth';
-import { getFirestore, doc, setDoc, collection, getDocs, type Firestore } from 'firebase/firestore';
-import { firebaseConfig } from '../firebase';
-import { COMPANIONS, STORIES, ACTIVITIES, EVENTS } from '../data/seedData';
+import type { Companion, ExperienceStory, Activity, Event } from '../types';
 
-const app: FirebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db: Firestore = getFirestore(app);
-const auth: Auth = getAuth(app);
-
-async function authenticateIfConfigured() {
-  const email = process.env.VITE_SEED_ADMIN_EMAIL;
-  const password = process.env.VITE_SEED_ADMIN_PASSWORD;
-  if (email && password) {
-    await signInWithEmailAndPassword(auth, email, password);
-    console.log(`Seed authenticated as admin: ${email}`);
-  } else {
-    console.log('No VITE_SEED_ADMIN_EMAIL/PASSWORD set - writing without auth (admin-only collections may be denied).');
-  }
-}
-
-const companions = [
+export const COMPANIONS: Companion[] = [
   {
     id: 'c1',
     name: 'Safal Kunwar',
@@ -239,154 +219,163 @@ const companions = [
   },
 ];
 
-const guideApplications = [
+export const STORIES: ExperienceStory[] = [
   {
-    id: 'ga1',
-    name: 'Sanjay Lama',
-    email: 'sanjay.l@example.com',
-    location: 'Pokhara',
-    appliedDate: new Date().toISOString(),
-    status: 'pending',
-    companionId: 'c10',
-    idUrl: '#',
+    id: 's1',
+    companionId: 'c1',
+    userId: 'u-demo-1',
+    userName: 'Emma',
+    companionName: 'Safal Kunwar',
+    imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
+    timeAgo: '2h ago',
+    caption: 'Amazing momo tasting tour!',
+    likes: 124,
+    comments: 18,
+  },
+  {
+    id: 's2',
+    companionId: 'c2',
+    userId: 'u-demo-2',
+    userName: 'Raj',
+    companionName: 'Aarav Thapa',
+    imageUrl: 'https://images.unsplash.com/photo-1510425463958-dcced28da480?q=80&w=800&auto=format&fit=crop',
+    timeAgo: '4h ago',
+    caption: 'Swayambhunath was breathtaking at sunset.',
+    likes: 89,
+    comments: 12,
+  },
+  {
+    id: 's3',
+    companionId: 'c5',
+    userId: 'u-demo-3',
+    userName: 'Chloe',
+    companionName: 'Sita Maharjan',
+    imageUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=800&auto=format&fit=crop',
+    timeAgo: '6h ago',
+    caption: 'Patan Durbar Square is so rich in history.',
+    likes: 56,
+    comments: 7,
+  },
+  {
+    id: 's4',
+    companionId: 'c4',
+    userId: 'u-demo-4',
+    userName: 'Liam',
+    companionName: 'Nima Sherpa',
+    imageUrl: 'https://images.unsplash.com/photo-1511216113906-8f56bb20925c?q=80&w=800&auto=format&fit=crop',
+    timeAgo: '1d ago',
+    caption: 'A great boat ride on Phewa lake.',
+    likes: 210,
+    comments: 24,
+  },
+  {
+    id: 's5',
+    companionId: 'c8',
+    userId: 'u-demo-5',
+    userName: 'Sophia',
+    companionName: 'Yuki Tanaka',
+    imageUrl: 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?q=80&w=800&auto=format&fit=crop',
+    timeAgo: '2d ago',
+    caption: 'Coffee tasting and great conversations.',
+    likes: 167,
+    comments: 15,
+  },
+];
+
+export const ACTIVITIES: Activity[] = [
+  {
+    id: 'a1',
+    title: 'Local Coffee Chat',
+    description: 'Explore hidden cafes with a local companion.',
+    duration: '1-2 hours',
+    avgPrice: 1500,
+    imageUrl: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800&auto=format&fit=crop',
+    companionCount: 124,
+    category: 'Coffee Buddy',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'ga2',
-    name: 'Priya Gurung',
-    email: 'priya.g@example.com',
-    location: 'Kathmandu',
-    appliedDate: new Date(Date.now() - 86400000).toISOString(),
-    status: 'pending',
-    companionId: 'c11',
-    idUrl: '#',
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    id: 'a2',
+    title: 'Street Food Tour',
+    description: 'Taste the best street food in the city.',
+    duration: '2-3 hours',
+    avgPrice: 2000,
+    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop',
+    companionCount: 85,
+    category: 'Food Explorer',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'a3',
+    title: 'City Photography',
+    description: 'Capture the city skyline and hidden gems.',
+    duration: '2-4 hours',
+    avgPrice: 2500,
+    imageUrl: 'https://images.unsplash.com/photo-1516862523118-a3724eb136d7?q=80&w=800&auto=format&fit=crop',
+    companionCount: 62,
+    category: 'Photography Walk',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
 ];
 
-const sosAlerts = [
+export const EVENTS: Event[] = [
   {
-    id: 'sos1',
-    user: 'Maria (Traveler)',
-    guide: 'Arjun Thapa',
-    location: 'Thamel, Kathmandu',
-    status: 'active',
-    priority: 'high',
-    timestamp: new Date(Date.now() - 600000).toISOString(),
+    id: 'e1',
+    title: 'Weekend Hiking Group',
+    description: 'Group hike around the valley with experienced guides.',
+    date: '2026-07-24',
+    time: '10:00 AM',
+    location: 'National Park Trailhead',
+    coordinates: { latitude: 27.7172, longitude: 85.324 },
+    spots: 3,
+    participants: ['u-demo-1', 'u-demo-2'],
+    imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d54612?q=80&w=800&auto=format&fit=crop',
+    createdBy: 'u-demo-admin',
+    createdAt: new Date().toISOString(),
   },
   {
-    id: 'sos2',
-    user: 'Pasang Dolma (Guide)',
-    guide: '-',
-    location: 'Patan Durbar Square',
-    status: 'resolved',
-    priority: 'medium',
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-  },
-];
-
-const suspiciousActivities = [
-  {
-    id: 'sus1',
-    flag: 'Multiple failed payments',
-    target: 'User: JohnDoe99',
-    date: new Date().toISOString(),
-    status: 'new',
+    id: 'e2',
+    title: 'Art Exhibition & Coffee',
+    description: 'Visit the downtown gallery and discuss art over coffee.',
+    date: '2026-07-25',
+    time: '02:00 PM',
+    location: 'Downtown Gallery',
+    coordinates: { latitude: 27.7089, longitude: 85.3067 },
+    spots: 2,
+    participants: ['u-demo-3'],
+    imageUrl: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=800&auto=format&fit=crop',
+    createdBy: 'u-demo-admin',
+    createdAt: new Date().toISOString(),
   },
   {
-    id: 'sus2',
-    flag: 'Rapid location change anomaly',
-    target: 'Guide: Rajesh Karki',
-    date: new Date(Date.now() - 86400000).toISOString(),
-    status: 'investigating',
-  },
-];
-
-const feedback = [
-  {
-    id: 'fb1',
-    user: 'Sarah L.',
-    type: 'feedback',
-    message: 'The app is great, but I wish I could filter guides by language spoken directly on the map.',
-    date: new Date().toISOString(),
-    rating: 4,
-    status: 'new',
-    userId: 'u-demo-1',
+    id: 'e3',
+    title: 'Language Exchange Meetup',
+    description: 'Practice languages with native speakers in a relaxed setting.',
+    date: '2026-07-26',
+    time: '06:30 PM',
+    location: 'Central Cafe',
+    coordinates: { latitude: 27.7126, longitude: 85.3152 },
+    spots: 5,
+    participants: ['u-demo-1', 'u-demo-4', 'u-demo-5'],
+    imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop',
+    createdBy: 'u-demo-admin',
+    createdAt: new Date().toISOString(),
   },
   {
-    id: 'fb2',
-    user: 'John Doe',
-    type: 'bug',
-    message: 'Payment gateway crashed when I tried to use my international card.',
-    date: new Date(Date.now() - 86400000).toISOString(),
-    rating: null,
-    status: 'new',
-    userId: 'u-demo-2',
-  },
-  {
-    id: 'fb3',
-    user: 'Pasang D.',
-    type: 'guide_feedback',
-    message: 'I need a way to block users who are unresponsive after booking.',
-    date: new Date(Date.now() - 172800000).toISOString(),
-    rating: null,
-    status: 'resolved',
-    userId: 'u-demo-3',
+    id: 'e4',
+    title: 'Photography Walk',
+    description: 'Capture the historic district at golden hour.',
+    date: '2026-07-28',
+    time: '09:00 AM',
+    location: 'Historic District',
+    coordinates: { latitude: 27.671, longitude: 85.4298 },
+    spots: 1,
+    participants: [],
+    imageUrl: 'https://images.unsplash.com/photo-1476673160081-cf0658b76f3e?q=80&w=800&auto=format&fit=crop',
+    createdBy: 'u-demo-admin',
+    createdAt: new Date().toISOString(),
   },
 ];
-
-type SeedCollection = { name: string; items: { id: string }[] };
-
-const collections: SeedCollection[] = [
-  { name: 'companions', items: companions },
-  { name: 'stories', items: STORIES },
-  { name: 'activities', items: ACTIVITIES },
-  { name: 'events', items: EVENTS },
-  { name: 'guideApplications', items: guideApplications },
-  { name: 'sosAlerts', items: sosAlerts },
-  { name: 'suspiciousActivity', items: suspiciousActivities },
-  { name: 'feedback', items: feedback },
-];
-
-async function seedCollection(col: SeedCollection) {
-  const ref = collection(db, col.name);
-  const existing = await getDocs(ref);
-  if (existing.size > 0) {
-    console.log(`Seed skipped: ${existing.size} '${col.name}' documents already exist.`);
-    return;
-  }
-  for (const item of col.items) {
-    await setDoc(doc(db, col.name, item.id), item);
-  }
-  console.log(`Seeded ${col.items.length} '${col.name}' documents.`);
-}
-
-async function seed() {
-  await authenticateIfConfigured();
-
-  const failures: string[] = [];
-  for (const col of collections) {
-    try {
-      await seedCollection(col);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      failures.push(`'${col.name}': ${message}`);
-      console.warn(`Seed FAILED for '${col.name}': ${message}`);
-    }
-  }
-
-  if (failures.length) {
-    console.warn('\nSome collections could not be seeded. This is usually because the Firestore security rules require admin authentication for writes.');
-    console.warn('Set VITE_SEED_ADMIN_EMAIL and VITE_SEED_ADMIN_PASSWORD in your .env and ensure that user has the admin custom claim, then re-run `npm run seed`.');
-    console.warn('The app will still display companions via its local fallback data.\n');
-  } else {
-    console.log('Seed complete: companions, stories, activities, events, guideApplications, sosAlerts, suspiciousActivity, and feedback checked/written.');
-  }
-}
-
-seed().catch((error) => {
-  console.error('Seed failed:', error);
-  process.exit(1);
-});
