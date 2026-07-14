@@ -1,5 +1,9 @@
 # Project Status
 
+## Audit correction — 2026-07-13
+
+The repository audit is complete. Previous status claims are inconsistent with the current code: the web app contains real Firebase integration, but it is not production-ready. Priority blockers are the Firestore client/rule contract mismatch, insecure client-side payment secrets, inconsistent messaging paths, failing type checks, and the pending Blaze-plan upgrade required before Cloud Functions can be deployed. No implementation changes were made in this audit session.
+
 Current Phase:
 Phase 4 - Optimization & Ecosystem
 
