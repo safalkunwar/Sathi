@@ -683,49 +683,32 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
 
       {/* Story Modal */}
       {viewingStory && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/90 backdrop-blur-md" onClick={() => setViewingStory(null)}>
-            <div className="relative w-full max-w-4xl aspect-video md:aspect-[16/10] bg-[#17191C] rounded-3xl overflow-hidden border border-[#2A2D31] shadow-2xl" onClick={e => e.stopPropagation()}>
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md" onClick={() => setViewingStory(null)}>
+            <div className="relative w-full max-w-sm aspect-[9/16] bg-[#17191C] rounded-3xl overflow-hidden border border-[#2A2D31]" onClick={e => e.stopPropagation()}>
                <img src={viewingStory.imageUrl} className="w-full h-full object-cover" />
-               <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/80"></div>
+               <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
                
-               <div className="absolute top-0 inset-x-0 p-4 md:p-6 flex items-center justify-between">
+               <div className="absolute top-0 inset-x-0 p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                     <img src={viewingStory.userAvatar} className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-[#C8A25E] object-cover" />
+                     <img src={viewingStory.userAvatar} className="w-10 h-10 rounded-full border-2 border-[#C8A25E]" />
                      <div>
                         <span className="text-white font-semibold text-sm block">{viewingStory.userName}</span>
                         <span className="text-[#8E9299] text-xs">with {viewingStory.companionName} • {viewingStory.timeAgo}</span>
                      </div>
                   </div>
-                  <button onClick={() => setViewingStory(null)} className="text-white bg-black/40 hover:bg-black/60 rounded-full p-2 backdrop-blur-sm transition-colors" aria-label="Close story">✕</button>
+                  <button onClick={() => setViewingStory(null)} className="text-white bg-black/40 rounded-full p-2 backdrop-blur-sm">✕</button>
                </div>
 
-               {/* Left Navigation */}
-               {(() => { const idx = stories.findIndex(s => s.id === viewingStory.id); return idx > 0; })() && (
-                  <button
-                     onClick={(e) => { e.stopPropagation(); const idx = stories.findIndex(s => s.id === viewingStory.id); if (idx > 0) setViewingStory(stories[idx - 1]); }}
-                     className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white transition-all hover:scale-110"
-                     aria-label="Previous story"
-                  >
-                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                  </button>
-               )}
+               {/* Left/Right Click Areas */}
+               <div className="absolute inset-y-20 left-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = stories.findIndex(s => s.id === viewingStory.id); if (idx > 0) setViewingStory(stories[idx - 1]); }}></div>
+               <div className="absolute inset-y-20 right-0 w-1/3 cursor-pointer" onClick={(e) => { e.stopPropagation(); const idx = stories.findIndex(s => s.id === viewingStory.id); if (idx < stories.length - 1) setViewingStory(stories[idx + 1]); else setViewingStory(null); }}></div>
 
-               {/* Right Navigation */}
-               {(() => { const idx = stories.findIndex(s => s.id === viewingStory.id); return idx < stories.length - 1; })() && (
-                  <button
-                     onClick={(e) => { e.stopPropagation(); const idx = stories.findIndex(s => s.id === viewingStory.id); if (idx < stories.length - 1) setViewingStory(stories[idx + 1]); }}
-                     className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center text-white transition-all hover:scale-110"
-                     aria-label="Next story"
-                  >
-                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  </button>
-               )}
-
-               <div className="absolute bottom-0 inset-x-0 p-6 md:p-8">
-                  <p className="text-white text-lg md:text-xl font-medium shadow-sm mb-4">{viewingStory.caption}</p>
-                  <div className="flex gap-1.5">
-                     {stories.map((s, i) => (
-                        <div key={s.id} className={`h-1 rounded-full flex-1 transition-all ${s.id === viewingStory.id ? 'bg-white' : 'bg-white/30'}`} />
+               <div className="absolute bottom-10 inset-x-0 p-6 flex justify-between items-end gap-2 pointer-events-none">
+                  <p className="text-white text-lg font-medium shadow-sm">{viewingStory.caption}</p>
+                  
+                  <div className="flex gap-1 mb-1">
+                     {stories.map((s) => (
+                       <div key={s.id} className={`w-1.5 h-1.5 rounded-full ${s.id === viewingStory.id ? 'bg-white' : 'bg-white/30'}`} />
                      ))}
                   </div>
                </div>
