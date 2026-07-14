@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { StrictMode, useState, useEffect } from 'react';
+import { StrictMode, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import React from 'react';
 import { Navbar } from './components/Navbar';
 import { CompanionProfileModal } from './components/modals/CompanionProfileModal';
+import { StoryCard } from './components/cards/StoryCard';
 import { StoryModal } from './components/modals/StoryModal';
 import { AuthModal } from './components/AuthModal';
 import { MessagesTab } from './components/messages/MessagesTab';
@@ -42,6 +43,7 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
   const [isGuide, setIsGuide] = useState(false);
   const [showGuideSetup, setShowGuideSetup] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedStoryCategory, setSelectedStoryCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'recommended' | 'priceAsc' | 'priceDesc' | 'rating'>('recommended');
   const [showSOS, setShowSOS] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState<Companion[]>([]);
@@ -78,6 +80,65 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
     if (sortBy === 'rating') return b.rating - a.rating;
     return 0; // recommended
   });
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollWidth > target.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      target.scrollLeft += e.deltaY;
+    }
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.currentTarget.scrollBy({ left: -380, behavior: 'smooth' });
+    } else if (e.key === 'ArrowRight') {
+      e.currentTarget.scrollBy({ left: 380, behavior: 'smooth' });
+    }
+  }, []);
+
+  const storyCategories = useMemo(() => {
+    const set = new Set<string>();
+    stories.forEach(s => {
+      const companion = companions.find(c => c.id === s.companionId);
+      const interests = companion?.interests || [];
+      const map: Record<string, string> = {
+        'Trekking': 'Hiking', 'Hiking': 'Hiking', 'Mountains': 'Hiking',
+        'Coffee': 'Coffee Buddy', 'Food': 'Food Tour', 'Local Food': 'Food Tour',
+        'Photography': 'Photography', 'History': 'Museum', 'Art': 'Museum', 'Pottery': 'Museum',
+        'Language': 'Language Exchange', 'Shopping': 'Shopping', 'Fashion': 'Shopping', 'Crafts': 'Shopping',
+        'Fitness': 'Fitness', 'Culture': 'Cultural', 'Local Culture': 'Cultural',
+        'Wildlife': 'Wildlife', 'Music': 'Music', 'Reading': 'Study', 'Business': 'Networking',
+        'Swimming': 'Outdoors', 'Outdoors': 'Outdoors', 'Nature': 'Nature',
+      };
+      for (const interest of interests) {
+        if (map[interest]) { set.add(map[interest]); break; }
+      }
+    });
+    return ['All', ...Array.from(set)];
+  }, [stories, companions]);
+
+  const filteredStories = useMemo(() => {
+    if (selectedStoryCategory === 'All') return stories;
+    const map: Record<string, string> = {
+      'Trekking': 'Hiking', 'Hiking': 'Hiking', 'Mountains': 'Hiking',
+      'Coffee': 'Coffee Buddy', 'Food': 'Food Tour', 'Local Food': 'Food Tour',
+      'Photography': 'Photography', 'History': 'Museum', 'Art': 'Museum', 'Pottery': 'Museum',
+      'Language': 'Language Exchange', 'Shopping': 'Shopping', 'Fashion': 'Shopping', 'Crafts': 'Shopping',
+      'Fitness': 'Fitness', 'Culture': 'Cultural', 'Local Culture': 'Cultural',
+      'Wildlife': 'Wildlife', 'Music': 'Music', 'Reading': 'Study', 'Business': 'Networking',
+      'Swimming': 'Outdoors', 'Outdoors': 'Outdoors', 'Nature': 'Nature',
+    };
+    return stories.filter(s => {
+      const companion = companions.find(c => c.id === s.companionId);
+      const interests = companion?.interests || [];
+      for (const interest of interests) {
+        if (map[interest] === selectedStoryCategory) return true;
+      }
+      return false;
+    });
+  }, [stories, companions, selectedStoryCategory]);
 
   return (
     <div className="min-h-screen bg-[#0F1113] font-sans text-[#E0E0E0] pb-20">
@@ -321,36 +382,60 @@ export const ClientApp = React.memo(({ initialTab }: ClientAppProps = {}) => {
               </div>
             )}
 
-            {/* Community Moments Feed */}
-            <div className="mt-16 md:mt-24">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl md:text-3xl font-bold text-white">Community Moments</h2>
-                <button onClick={() => showToast('Full community feed coming soon', 'info')} className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">View Feed</button>
-              </div>
-              <div className="flex overflow-x-auto gap-6 hide-scrollbar snap-x snap-mandatory pb-4">
-                 {[
-                   { user: 'Sarah', companion: 'Emma', text: 'Sarah had a great coffee chat with Emma in Seattle.', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop', userAvatar: 'https://ui-avatars.com/api/?name=Sarah&background=random', compAvatar: 'https://ui-avatars.com/api/?name=Emma&background=random' },
-                   { user: 'Marcus', companion: 'David', text: 'Marcus and David exploring the hidden street art alleys.', image: 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=800&auto=format&fit=crop', userAvatar: 'https://ui-avatars.com/api/?name=Marcus&background=random', compAvatar: 'https://ui-avatars.com/api/?name=David&background=random' },
-                   { user: 'Elena', companion: 'Sophie', text: 'Perfect afternoon language exchange with Sophie!', image: 'https://images.unsplash.com/photo-1529156069898-49953eb1b5ce?q=80&w=800&auto=format&fit=crop', userAvatar: 'https://ui-avatars.com/api/?name=Elena&background=random', compAvatar: 'https://ui-avatars.com/api/?name=Sophie&background=random' }
-                 ].map((moment, idx) => (
-                   <div key={idx} className="shrink-0 w-[300px] md:w-[380px] snap-center bg-[#17191C] rounded-[24px] overflow-hidden border border-[#2A2D31] group">
-                      <div className="h-64 relative overflow-hidden">
-                         <img src={moment.image} alt="Moment" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                         <div className="absolute inset-0 bg-gradient-to-t from-[#17191C] via-transparent to-transparent"></div>
-                      </div>
-                      <div className="p-5 relative z-10 -mt-10">
-                         <div className="flex items-center gap-2 mb-3">
-                            <img src={moment.userAvatar} alt={moment.user} className="w-10 h-10 rounded-full border-2 border-[#17191C]" />
-                            <img src={moment.compAvatar} alt={moment.companion} className="w-10 h-10 rounded-full border-2 border-[#17191C] -ml-4" />
-                         </div>
-                         <p className="text-white text-sm md:text-base font-light leading-relaxed">
-                            {moment.text}
-                         </p>
-                      </div>
-                   </div>
+             {/* Community Moments Feed */}
+             <div className="mt-16 md:mt-24">
+               <div className="flex items-center justify-between mb-6">
+                 <h2 className="text-xl md:text-3xl font-bold text-white">Community Moments</h2>
+                 <button onClick={() => showToast('Full community feed coming soon', 'info')} className="text-sm font-medium text-[#C8A25E] hover:text-[#B69150]">View Feed</button>
+               </div>
+               
+               {/* Category Filters */}
+               <div className="flex gap-3 mb-6 overflow-x-auto hide-scrollbar pb-2" role="tablist" aria-label="Story categories">
+                 {storyCategories.map((cat) => (
+                   <button
+                     key={cat}
+                     role="tab"
+                     aria-selected={selectedStoryCategory === cat}
+                     onClick={() => setSelectedStoryCategory(cat)}
+                     className={`snap-start shrink-0 px-5 py-2.5 rounded-full text-[14px] font-medium tracking-wide cursor-pointer transition-all border shadow-sm ${
+                       selectedStoryCategory === cat
+                         ? 'bg-[#C8A25E] text-[#0F1113] border-[#C8A25E]'
+                         : 'bg-[#1E2124]/80 backdrop-blur-md text-[#8E9299] border-[#2A2D31] hover:border-[#C8A25E] hover:text-white'
+                     }`}
+                   >
+                     {cat}
+                   </button>
                  ))}
-              </div>
-            </div>
+               </div>
+               
+               {/* Stories Scroll Container */}
+               <div
+                 ref={scrollContainerRef}
+                 onWheel={handleWheel}
+                 onKeyDown={handleKeyDown}
+                 tabIndex={0}
+                 className="flex overflow-x-auto gap-6 hide-scrollbar snap-x snap-mandatory pb-4 scroll-smooth focus:outline-none focus:ring-2 focus:ring-[#C8A25E]/50 rounded-2xl"
+                 aria-label="Community stories"
+               >
+                 {storiesLoading ? (
+                   <div className="text-center py-12 text-[#8E9299]">Loading moments...</div>
+                 ) : filteredStories.length === 0 ? (
+                   <div className="text-center py-12 text-[#8E9299]">No moments yet. Be the first to share!</div>
+                 ) : (
+                   filteredStories.map((story) => {
+                     const companion = companions.find(c => c.id === story.companionId);
+                     return (
+                       <StoryCard
+                         key={story.id}
+                         story={story}
+                         companion={companion}
+                         onViewStory={setViewingStory}
+                       />
+                     );
+                   })
+                 )}
+               </div>
+             </div>
 
              {/* Popular Activities */}
              <div className="mt-16 md:mt-24">

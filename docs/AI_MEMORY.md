@@ -122,6 +122,7 @@ SATHI is a trusted Social Experiences Marketplace in Nepal. Mission: help people
 - `src/components/LoadingScreen.tsx` - Auth initialization screen
 - `src/components/maps/MapPreview.tsx` - Google Maps static preview
 - `src/components/notifications/NotificationProvider.tsx` - FCM registration and permission request
+- `src/components/cards/StoryCard.tsx` - Premium memoized story card with glassmorphism, animated border, and category chip
 - `src/App.tsx` - React Router entry point with NotificationProvider
 - `src/main.tsx` - React entry
 - `src/admin/*.tsx` - Admin mock dashboards (pending real data migration)

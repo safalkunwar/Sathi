@@ -46,6 +46,7 @@ Completed
 ✅ Performance optimization (React.memo, lazy loading images)
 ✅ Partner dashboard component (`src/components/dashboard/PartnerDashboard.tsx`)
 ✅ Admin panels migrated to real Firestore data (`AdminOverview`, `AdminBookings`, `AdminGuides`, `AdminFeedback`)
+✅ Redesigned desktop Community Moments section with premium StoryCard component and category filters
 
 In Progress
 

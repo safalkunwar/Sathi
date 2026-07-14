@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.18.0 - 2026-07-14
+
+Added
+- Redesigned desktop Community Moments (Stories) section with Instagram-quality cards
+- New `StoryCard` component (`src/components/cards/StoryCard.tsx`) with glassmorphism overlay, animated gold border, and hover zoom
+- Category filter chips for stories (Hiking, Coffee Buddy, Photography, etc.) with client-side filtering
+- Story preview play button overlay on hover
+- Like count, comment count, time, and verified badge display on story cards
+- Keyboard navigation (arrow keys) and mouse wheel horizontal scroll for story carousel
+- Lazy loading images and memoized StoryCard for performance
+
+Changed
+- Community Moments section now uses real Firestore-backed `stories` data instead of hardcoded mock data
+- Card dimensions increased for premium desktop feel (300px/360px width, 460px/520px height)
+
+Fixed
+- None
+
 ## v0.16.0 - 2026-07-12
 
 Added

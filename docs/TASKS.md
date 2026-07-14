@@ -29,12 +29,13 @@
 - FCM notifications with foreground listener
 - Offline storage service with IndexedDB
 - NotificationProvider component
-- Testing framework setup
+- Testing framework setup (Vitest + React Testing Library)
 - Initial smoke test
 - CI/CD pipeline
-- Accessibility improvements
-- Performance optimization
+- Accessibility improvements (aria labels, dialog roles)
+- Performance optimization (React.memo, lazy loading images)
 - Partner dashboard component
+- Redesigned desktop Community Moments section with StoryCard component and category filters
 - WCAG AA full compliance
 - Performance optimization (continued)
 

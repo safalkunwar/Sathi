@@ -31,6 +31,7 @@ SATHI is currently a **frontend-only prototype** built with React + Vite + TypeS
 |---------|--------|----------------|
 | Design System / Theme | Complete | Dark mode, gold accent, responsive layout |
 | Homepage / Explore Feed | Partial | Hero, categories, stories, activities, events, testimonials |
+| Community Moments (Stories) | Improved | Premium StoryCard component with category filters, glassmorphism, and real Firestore data |
 | Companion Cards | Partial | Grid with hover effects, ratings, pricing |
 | Search / Filter / Sort | Partial | Client-side filtering on hardcoded COMPANIONS |
 | Companion Profile Modal | Partial | Detailed view with reviews placeholder |
