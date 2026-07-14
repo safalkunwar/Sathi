@@ -74,6 +74,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Stories Collection: /stories/{storyId}
+    match /stories/{storyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Bookings Collection: /bookings/{bookingId}
     match /bookings/{bookingId} {
       // Users can read their own bookings
@@ -199,10 +205,7 @@ service cloud.firestore {
 
     // Events Collection: /events/{eventId}
     match /events/{eventId} {
-      // Anyone can read public events
-      allow read: if resource.data.type == 'public' || isAdmin();
-
-      // Admins can create, update, and delete events
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
