@@ -1,0 +1,164 @@
+================================================================================
+EXPANDED PLATFORM POLICY & TRUST AND SAFETY ARCHITECTURE REPORT
+Project: Local Companion & City Guiding Marketplace
+Confidentiality: Internal / Public Draft
+================================================================================
+
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+This document establishes the updated governance, policy, and product guardrails
+for our double-sided marketplace. It incorporates strict behavioral rules, data 
+collection standards, automated physical location tracking mechanisms, and a clear 
+operational response framework to handle group size variance and safety flags.
+
+The platform's baseline requirement remains unchanged: This is a platonic, 
+companionship-only service designed to accompany stays in a specific city, 
+and nothing more.
+
+================================================================================
+2. STRUCTURAL SYSTEM ARCHITECTURE & TECHNICAL CONTROLS
+--------------------------------------------------------------------------------
+
+A. Identity Verification (KYC) & Group Data Collection
+   - Seeker KYC Mandate: The primary booking user ("Booker") must pass full Know Your 
+     Customer (KYC) protocols, including government ID/passport uploading and a biometric 
+     liveness selfie scan prior to booking validation.
+   - Group Manifest Requirements: The system requires the Booker to input the exact 
+     number of attendees along with the full legal names and active phone numbers of 
+     every individual participating in the tour. Anonymous or unregistered guests 
+     are systemically prohibited.
+
+B. Automated Live Location Tracking Framework
+   - Mandatory Guide Geofencing: Background GPS tracking is strictly mandatory for 
+     all Guides during active booking hours. 
+   - Clock-Activated Automation: The moment the scheduled meeting time arrives, the 
+     platform application automatically forces the Guide's device GPS tracking into the 
+     "On" status. This telemetry is recorded continuously to the server logs.
+   - Proactive Warning System: If the booking start time triggers and the platform 
+     cannot ping the Guide's live location (due to permission withdrawal or device 
+     shutdown), the system automatically fires an urgent, escalating in-app alert 
+     and SMS warning. If unresolved within 10 minutes, the booking is flagged for 
+     immediate support intervention.
+   - Optional Seeker Tracking: To enhance confidence and facilitate seamless physical 
+     rendezvous in crowded city hubs, Seekers can toggle on temporary, mutual 
+     location sharing at the meeting start time.
+
+C. Communication Sandboxing
+   - In-app text filters actively block external communication handles (e.g., sharing 
+     WhatsApp, Telegram, or personal numbers) prior to a locked booking. Financial escrow 
+     holds funds securely until 24 hours post-trip.
+
+================================================================================
+3. CORE POLICIES FOR THE LOCALS (GUIDES / FRIENDS)
+--------------------------------------------------------------------------------
+
+A. COMPULSORY POLICIES (Strictly Enforced)
+
+   1. Group Variance & Attendance Discrepancy Policy
+      - Definition: The Guide is explicitly contracted to accompany only the specific individuals 
+        registered on the booking manifest. 
+      - Guide's Right to Terminate: If the number of people who arrive at the meeting point 
+        exceeds the manifest, or if the individuals present vary entirely from the registered 
+        names, the Guide possesses the absolute right to terminate the request immediately.
+      - Financial Protection: In the event of a group variance termination, the booking charge 
+        is completely non-refundable to the Seeker, and the Guide receives their full payout.
+      - Exception Clause: If the Guide assesses the situation, feels completely safe, and 
+        voluntarily consents to accommodate the extra/changed people, they have the option to 
+        manually override and continue the tour.
+
+   2. Boundary, Location, & Conduct Rules
+      - Zero-tolerance ban on entering a Seeker’s private accommodation (hotel rooms, 
+        Airbnbs, residential properties). Tours must be conducted in public or commercial spaces.
+      - Complete prohibition on romantic or sexual advances. All activity must be platonic.
+      - Absolute ban on accepting off-platform financial transactions (cash, personal peer-to-peer apps).
+
+B. NON-COMPULSORY BUT EFFECTIVE POLICIES (Best Practices)
+
+   1. Complete Alcohol & Substance Abstinence Policy
+      - Guides are strongly advised to reject any alcoholic beverages offered by the Seeker 
+        and remain completely sober throughout the itinerary. Absolute zero-tolerance for 
+        illegal or controlled substances.
+
+   2. Local Emergency Route Pre-Vetting
+      - Guides are encouraged to plan routes that pass through major, open commercial 
+        corridors rather than isolated alleys, prioritizing safety in unfamiliar city sectors.
+
+================================================================================
+4. CORE POLICIES FOR THE SEEKERS (TRAVELERS)
+--------------------------------------------------------------------------------
+
+A. COMPULSORY POLICIES (Strictly Enforced)
+
+   1. Accurate Guest Manifest & Anti-Baiting Mandate
+      - Seekers are legally required to provide accurate, truthful data regarding group count 
+        and attendee names. Bringing unlisted persons to a booking constitutes a breach of 
+        the terms of service.
+
+   2. Behavioral Boundaries & Incidental Cost Ownership
+      - Zero-harassment mandate. Explicit language, stalking, or inappropriate contact yields 
+        an immediate ban with no refund.
+      - The Seeker covers 100% of the incidental costs generated during the itinerary (e.g., 
+        the Guide’s entrance tickets, public transit passes, meals, and drinks during the session).
+      - Seekers cannot mandate or require the Guide to ride in or operate an unvetted private vehicle.
+
+B. NON-COMPULSORY BUT EFFECTIVE POLICIES (Best Practices)
+
+   1. Pre-Authorized Incidentals and Late-Extension Deposit
+      - Implement a temporary $50 credit authorization hold on the Seeker's card to cover 
+        authorized extra hours or unexpected venue additions without manual re-billing.
+
+================================================================================
+5. SYSTEM INTEGRITY & ADDITIONAL SUGGESTIONS
+--------------------------------------------------------------------------------
+
+A. New Suggestion: Real-Time Verification Pins (Check-In Guard)
+   - At the physical meeting location, the app generates a unique 4-digit PIN on the Seeker's 
+     screen. The Guide must input this PIN into their own app to formally initiate the tour 
+     and unlock the live tracking map. This proves both parties are physically present together.
+
+B. New Suggestion: Discreet Safety Audio Recording
+   - Introduce an opt-in safety feature inside the app allowing either user to trigger 
+     encrypted, short-burst audio recordings if they feel an interaction is turning hostile 
+     or violating terms. This audio is sent directly to platform trust agents for review.
+
+C. Two-Way Blind Review System & Balanced Cancellations
+   - Reviews are hidden until both sides fill them out to stop retaliatory down-voting. 
+   - Cancellations under 24 hours protect the local's opportunity cost by withholding refunds.
+
+================================================================================
+6. THE COMPREHENSIVE RE-USABLE MASTER PROMPT
+--------------------------------------------------------------------------------
+Below is the updated, copy-pasteable master prompt containing all context and parameters 
+to regenerate this exact framework in any language, AI platform, or development guide.
+--------------------------------------------------------------------------------
+
+[START OF PROMPT]
+Act as a Senior Product Manager and Trust & Safety Expert for double-sided marketplaces. I am building a platform where travelers ("Seekers") can book verified locals ("Guides/Friends") to accompany them during their stay in a specific city for cultural exploration, navigation, and platonic companionship. 
+
+The service must be strictly platonic, professional, and geographically bounded ("booking a local friend to accompany a stay, and nothing more"). Because users meet offline in physical spaces, safety, trust, and fairness are the organization's highest priorities.
+
+Please design a comprehensive document outlining the required system controls and platform policies to make this marketplace fair and safe for both sides. Structure the response into the following clear sections, incorporating these specific features:
+
+1. STRUCTURAL SYSTEM ARCHITECTURE & TECHNICAL CONTROLS: Product-level security features required before policies can even be enforced. This must include:
+   - Mandatory upfront KYC verification for the primary Seeker making the booking.
+   - System storage fields for the total group size, plus names and phone numbers of all attendees in the group.
+   - Automated location tracking: The moment the meeting time starts, the Guide's GPS tracking must automatically turn on. If the Guide's location service is off at start time, the system must immediately issue an automated warning notification.
+   - Optional Seeker location sharing at meeting time to ensure mutual security and easy locating.
+   - Communication sandboxing/chat filtering to block off-platform contact sharing and financial escrow systems.
+   - Real-Time Verification PINs: A 4-digit check-in code exchanged physically to initiate the booking timer.
+
+2. CORE POLICIES FOR THE LOCALS (GUIDES / FRIENDS): 
+   - Compulsory Policies: Strict non-negotiable legal/operational rules. Include a Group Variance Policy: If the number of people who show up increases or varies from the registered booking, the Guide has the option to terminate the request immediately. In this case, the Seeker will NOT be refunded, and the Guide gets paid. If the Guide is comfortable, they can choose to continue. Also include dress codes, a strict ban on off-platform transactions, and a zero-tolerance ban on entering private hotel rooms or residences.
+   - Non-Compulsory but Highly Effective Policies: Best practices like alcohol/substance consumption abstinence rules, route pre-vetting, and grace periods for punctuality.
+
+3. CORE POLICIES FOR THE SEEKERS (TRAVELERS):
+   - Compulsory Policies: Rules governing traveler behavior including zero-harassment mandates, accurate group registration (names/numbers of all guests), explicit cost responsibility policies (transit/meals during the tour), and a ban on demanding private vehicle transport.
+   - Non-Compulsory but Highly Effective Policies: Suggested protections like temporary security deposit authorizations.
+
+4. SYSTEM INTEGRITY & CORPORATE FAIRNESS POLICIES: 
+   - Compulsory Policies: Operational rules that ensure marketplace equity including a balanced cancellation/refund matrix that protects the local's time from late cancellations, and a two-way blind review system to eliminate retaliatory reviews.
+   - Non-Compulsory but Highly Effective Policies: Automated account deactivation thresholds for low ratings, encrypted safety audio recording modules, and a platform-backed community safety relief fund.
+
+Deliver this in a highly structured, clear, and actionable format using plain, direct language instead of abstract corporate jargon. Avoid verbose, conversational introductions and get straight to the policy framework.
+[END OF PROMPT]
+================================================================================
